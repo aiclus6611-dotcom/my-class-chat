@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分組討論區 (即時協作版)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <style>
+        body { font-family: "微軟正黑體", sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; padding-bottom: 50px; }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        
+        /* 按鈕通用樣式 */
+        .btn { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1rem; margin: 5px; transition: 0.2s; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-red { background: #ff5252; color: white; }
+        .btn-blue { background: #1976d2; color: white; }
+        .btn-green { background: #4caf50; color: white; }
+        .btn-gray { background: #ccc; color: #333; }
+
+        /* 登入選組畫面 */
+        .group-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .group-btn { padding: 20px; font-size: 1.2rem; border: none; border-radius: 10px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; position: relative;}
+        .group-btn:hover { background: #e3f2fd; transform: translateY(-2px); }
+        .lock-icon { position: absolute; top: 10px; right: 10px; font-size: 1rem; color: #888; }
+        
+        /* 學生輸入畫面 */
+        .student-view { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .group-badge { background: #1976d2; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; display: inline-block; margin-bottom: 20px;}
+        
+        /* 動態輸入行 */
+        /* 使用 transition-group 讓別人新增項目時有滑入動畫 */
+        .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
+        .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(-30px); }
+
+        .input-row { display: flex; align-items: center; margin-bottom: 10px; }
+        .row-bullet { font-size: 1.5rem; margin-right: 10px; color: #333; line-height: 1; }
+        .row-input { flex: 1; padding: 12px; font-size: 1.1rem; border: 1px solid #ddd; border-radius: 5px; outline: none; transition: border 0.2s, background 0.3s; }
+        .row-input:focus { border-color: #1976d2; background: #fff; }
+        /* 當這一行是別人正在打字更新時，給一點視覺回饋 (這裡簡單做，只要非空就有顏色) */
+        .row-input.updated { animation: highlight 1s ease; }
+
+        @keyframes highlight { 0% { background: #e3f2fd; } 100% { background: #fff; } }
+        
+        .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; margin-left: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; transition: 0.2s; }
+        .btn-del { background: #ffebee; color: #d32f2f; }
+        .btn-del:hover { background: #d32f2f; color: white; }
+        
+        /* 底部新增按鈕區 */
+        .add-bar { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; }
+        .btn-add-big { background: #e3f2fd; color: #1976d2; width: 100%; padding: 12px; border-radius: 8px; border: 2px dashed #90caf9; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-add-big:hover { background: #bbdefb; border-color: #1976d2; }
+
+        .status { text-align: right; color: #4caf50; font-size: 0.9rem; margin-top: 10px; height: 20px; }
+
+        /* 老師總覽畫面 */
+        .teacher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; }
+        .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; display: flex; justify-content: space-between; align-items: center; }
+        .group-content ul { padding-left: 20px; margin-top: 0; }
+        .group-content li { margin-bottom: 5px; line-height: 1.5; word-break: break-all; }
+        .empty-text { color: #999; font-style: italic; }
+        
+        /* 控制項 */
+        .teacher-controls { text-align: center; margin-top: 40px; margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; border-top: 1px dashed #ccc; padding-top: 20px; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .modal-box { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .modal-section { margin-bottom: 20px; }
+        .modal-section h4 { margin: 0 0 10px 0; color: #555; }
+        .modal-input-group { margin-bottom: 10px; display: flex; align-items: center; }
+        .modal-input-group label { width: 80px; font-weight: bold; }
+        .modal-input-group select, .modal-input-group input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;}
+        .modal-actions { text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+
+        .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background: #f0f2f5; display: flex; justify-content: center; align-items: center; z-index: 999; font-size: 1.5rem; color: #666; }
+
+        @media (max-width: 768px) {
+            .teacher-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div v-if="isLoading" class="loading-mask">資料讀取中...</div>
+
+        <h1>{{ isTeacher ? '講師總覽看板' : (currentGroup ? '分組討論區' : '請選擇組別') }}</h1>
+
+        <div v-if="!isTeacher && !currentGroup" class="group-selector-container">
+            <div style="text-align: center; margin-bottom: 15px; color: #666;">
+                <span v-if="hasPasswords">🔒 本次討論設有密碼保護，請點擊組別後輸入密碼。</span>
+                <span v-else>目前無設定密碼，請直接點擊進入。</span>
+            </div>
+            <div class="group-selector">
+                <button v-for="i in groupCount" :key="i" class="group-btn" @click="tryEnterGroup(i)">
+                    第 {{ i }} 組
+                    <span v-if="savedPasswords[i]" class="lock-icon">🔒</span>
+                </button>
+            </div>
+        </div>
+
+        <div v-if="!isTeacher && currentGroup" class="student-view">
+            <div class="group-badge">您現在是：第 {{ currentGroup }} 組</div>
+            
+            <div style="margin-bottom: 15px; color: #555;">
+                小組成員可以同時打字，資料會即時同步到所有人的畫面上。
+            </div>
+
+            <div class="dynamic-input-list">
+                <transition-group name="list">
+                    <div v-for="(item, index) in inputLines" :key="item.key" class="input-row">
+                        <span class="row-bullet">●</span>
+                        
+                        <input 
+                            type="text" 
+                            class="row-input"
+                            v-model="item.text" 
+                            placeholder="輸入想法..."
+                            @input="updateItem(item)"
+                            @keydown.enter.prevent="addNewLine"
+                        >
+                        
+                        <button class="icon-btn btn-del" @click="removeItem(item.key)" title="刪除此行" tabindex="-1">🗑️</button>
+                    </div>
+                </transition-group>
+            </div>
+
+            <div class="add-bar">
+                <button class="btn-add-big" @click="addNewLine">＋ 新增下一個論點</button>
+            </div>
+
+            <div class="status">{{ saveStatus }}</div>
+        </div>
+
+        <div v-if="isTeacher">
+            <div class="teacher-grid">
+                <div v-for="i in groupCount" :key="i" class="group-card">
+                    <h3>
+                        第 {{ i }} 組 
+                        <span v-if="savedPasswords[i]" title="已啟用密碼保護" style="font-size:1rem;">🔒</span>
+                    </h3>
+                    <div class="group-content">
+                        <ul v-if="hasData(i)">
+                            <li v-for="(line, k) in getGroupLines(i)" :key="k">
+                                {{ line }}
+                            </li>
+                        </ul>
+                        <p v-else class="empty-text">尚無內容...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-controls">
+                <button class="btn btn-red" @click="resetAllData">🗑️ 清空討論內容</button>
+                <button class="btn btn-blue" @click="openSettingsModal">⚙️ 系統設定 (組數/密碼)</button>
+            </div>
+        </div>
+
+        <div v-if="showTeacherModal" class="modal-overlay" @click.self="showTeacherModal = false">
+            <div class="modal-box">
+                <div class="modal-title">系統設定</div>
+                <div class="modal-section">
+                    <h4>1. 設定總組數 (1~10)</h4>
+                    <div class="modal-input-group">
+                        <label>組數：</label>
+                        <select v-model.number="tempGroupCount">
+                            <option v-for="n in 10" :value="n">{{ n }} 組</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <h4>2. 設定各組密碼 (留空即不設防)</h4>
+                    <div v-for="i in tempGroupCount" :key="i" class="modal-input-group">
+                        <label>第 {{i}} 組</label>
+                        <input type="text" v-model="tempPasswords[i]" placeholder="設定密碼...">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-gray" @click="showTeacherModal = false">取消</button>
+                    <button class="btn btn-green" @click="saveSettings">儲存設定</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showStudentLoginModal" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-title">🔒 請輸入第 {{ attemptingGroup }} 組密碼</div>
+                <div class="modal-input-group">
+                    <input type="text" v-model="studentInputPassword" placeholder="請詢問講師密碼" style="font-size:1.2rem; text-align:center;">
+                </div>
+                <div style="text-align:center; color:red; margin-bottom:10px;">{{ loginError }}</div>
+                <div class="modal-actions" style="text-align:center;">
+                    <button class="btn btn-gray" @click="showStudentLoginModal = false">取消</button>
+                    <button class="btn btn-blue" @click="checkPassword">進入討論</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, nextTick } = Vue;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUPGhkiJgxeYDYHqEaXCYvKh2vdTGqypw",
+            authDomain: "class-discussion-01.firebaseapp.com",
+            databaseURL: "https://class-discussion-01-default-rtdb.firebaseio.com",
+            projectId: "class-discussion-01",
+            storageBucket: "class-discussion-01.firebasestorage.app",
+            messagingSenderId: "724687365020",
+            appId: "1:724687365020:web:380b5d85872dc2d9b85e59",
+            measurementId: "G-XYN5JV48T7"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        createApp({
+            data() {
+                return {
+                    isLoading: true,
+                    isTeacher: false,
+                    currentGroup: null,
+                    
+                    // 學生端資料：改為物件陣列 [{key: '...', text: '...'}]
+                    inputLines: [], 
+                    
+                    saveStatus: '',
+                    allGroupsData: {},
+                    typingTimer: null,
+                    
+                    groupCount: 6,
+                    savedPasswords: {}, 
+                    showTeacherModal: false,
+                    tempPasswords: {},
+                    tempGroupCount: 6,
+                    showStudentLoginModal: false,
+                    attemptingGroup: null,
+                    studentInputPassword: '',
+                    loginError: '',
+                    pendingAutoGroup: null 
+                }
+            },
+            computed: {
+                hasPasswords() {
+                    return Object.values(this.savedPasswords).some(p => p && p.trim() !== '');
+                }
+            },
+            mounted() {
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                db.ref('settings').on('value', (snapshot) => {
+                    const settings = snapshot.val() || {};
+                    this.savedPasswords = settings.passwords || {};
+                    this.groupCount = settings.groupCount || 6;
+                    this.isLoading = false;
+                    
+                    if (this.pendingAutoGroup) {
+                        if (this.pendingAutoGroup <= this.groupCount) {
+                            this.tryEnterGroup(this.pendingAutoGroup);
+                        }
+                        this.pendingAutoGroup = null;
+                    }
+                });
+
+                if (urlParams.get('role') === 'teacher') {
+                    this.isTeacher = true;
+                    this.listenToAllData();
+                } else {
+                    const groupParam = urlParams.get('group');
+                    if (groupParam) {
+                        this.pendingAutoGroup = parseInt(groupParam);
+                    }
+                }
+            },
+            methods: {
+                // --- 學生功能 (即時協作版) ---
+                tryEnterGroup(num) {
+                    this.attemptingGroup = num;
+                    const requiredPwd = this.savedPasswords[num];
+                    
+                    if (requiredPwd && requiredPwd.trim() !== '') {
+                        this.studentInputPassword = '';
+                        this.loginError = '';
+                        this.showStudentLoginModal = true;
+                    } else {
+                        this.enterGroup(num);
+                    }
+                },
+                checkPassword() {
+                    if (this.studentInputPassword === this.savedPasswords[this.attemptingGroup]) {
+                        this.showStudentLoginModal = false;
+                        this.enterGroup(this.attemptingGroup);
+                    } else {
+                        this.loginError = '密碼錯誤';
+                    }
+                },
+                enterGroup(num) {
+                    this.currentGroup = num;
+                    this.isLoading = true;
+
+                    // **核心修改**：使用 .on() 進行持續監聽
+                    db.ref('groups/group_' + num).on('value', (snapshot) => {
+                        const val = snapshot.val();
+                        this.isLoading = false;
+
+                        if (!val) {
+                            // 如果完全沒資料，預設給一空行方便輸入
+                            if (this.inputLines.length === 0) {
+                                this.addNewLine(); 
+                            } else {
+                                // 如果是被清空了
+                                this.inputLines = [];
+                                this.addNewLine();
+                            }
+                            return;
+                        }
+
+                        // 資料轉換：如果是舊格式(字串)，提示重置；如果是新格式(物件)，轉為陣列
+                        if (typeof val === 'string') {
+                            // 簡單相容：把舊字串當成一個項目
+                            this.inputLines = [{key: 'legacy', text: val}];
+                        } else {
+                            // 將 Firebase 物件 {id1: val, id2: val} 轉為陣列 [{key:id1, text:val}]
+                            // 並保持 Firebase 的時間順序
+                            const newList = [];
+                            snapshot.forEach(childSnapshot => {
+                                newList.push({
+                                    key: childSnapshot.key,
+                                    text: childSnapshot.val()
+                                });
+                            });
+                            
+                            // 這裡做一個簡單的優化：如果正在打字，不要強制刷新整個列表導致焦點跑掉
+                            // 但因為我們有 v-model 和 key 綁定，Vue 通常處理得很好
+                            this.inputLines = newList;
+                        }
+                    });
+                },
+                
+                // 更新單一項目 (只儲存變更的那一行，不覆蓋別人)
+                updateItem(item) {
+                    this.saveStatus = '同步中...';
+                    // 這裡不需要 debounce 太久，因為只更新單一節點，衝突機率低
+                    db.ref('groups/group_' + this.currentGroup + '/' + item.key).set(item.text)
+                        .then(() => { this.saveStatus = '已同步'; })
+                        .catch(() => { this.saveStatus = '同步失敗'; });
+                },
+
+                // 新增一行 (使用 push 產生唯一 ID，避免衝突)
+                addNewLine() {
+                    db.ref('groups/group_' + this.currentGroup).push('').then(() => {
+                        // 新增後自動捲動到底部 (可選)
+                        this.saveStatus = '已新增';
+                    });
+                },
+                
+                // 刪除一行
+                removeItem(key) {
+                    // 至少保留一行不給刪 (為了版面好看)，除非是多行
+                    // 實際邏輯：直接刪除資料庫節點
+                    db.ref('groups/group_' + this.currentGroup + '/' + key).remove();
+                },
+
+                // --- 老師功能 (適配新資料結構) ---
+                listenToAllData() {
+                    db.ref('groups').on('value', (snapshot) => {
+                        this.allGroupsData = snapshot.val() || {};
+                    });
+                },
+                // 檢查該組是否有資料
+                hasData(groupIndex) {
+                    const data = this.allGroupsData['group_' + groupIndex];
+                    return data && (typeof data === 'string' || Object.keys(data).length > 0);
+                },
+                // 取得該組的文字列表 (同時支援舊字串與新物件格式)
+                getGroupLines(groupIndex) {
+                    const data = this.allGroupsData['group_' + groupIndex];
+                    if (!data) return [];
+                    
+                    if (typeof data === 'string') {
+                        return data.split('\n').filter(l => l.trim() !== '');
+                    } else {
+                        // 物件格式，轉成陣列
+                        return Object.values(data).filter(l => l && l.trim() !== '');
+                    }
+                },
+                resetAllData() {
+                    if(confirm('確定要清空所有內容嗎？\n(這會重置資料結構，建議執行以確保協作順暢)')) {
+                        db.ref('groups').set(null);
+                        this.allGroupsData = {};
+                    }
+                },
+                
+                // --- 系統設定 ---
+                openSettingsModal() {
+                    this.tempPasswords = { ...this.savedPasswords };
+                    this.tempGroupCount = this.groupCount;
+                    this.showTeacherModal = true;
+                },
+                saveSettings() {
+                    db.ref('settings').update({
+                        passwords: this.tempPasswords,
+                        groupCount: this.tempGroupCount
+                    }).then(() => {
+                        this.showTeacherModal = false;
+                        alert('系統設定已更新！');
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
