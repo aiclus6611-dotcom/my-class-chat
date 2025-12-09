@@ -32,7 +32,6 @@
         .group-badge { background: #1976d2; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; display: inline-block; margin-bottom: 20px;}
         
         /* 動態輸入行 */
-        /* 使用 transition-group 讓別人新增項目時有滑入動畫 */
         .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
         .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(-30px); }
 
@@ -40,7 +39,6 @@
         .row-bullet { font-size: 1.5rem; margin-right: 10px; color: #333; line-height: 1; }
         .row-input { flex: 1; padding: 12px; font-size: 1.1rem; border: 1px solid #ddd; border-radius: 5px; outline: none; transition: border 0.2s, background 0.3s; }
         .row-input:focus { border-color: #1976d2; background: #fff; }
-        /* 當這一行是別人正在打字更新時，給一點視覺回饋 (這裡簡單做，只要非空就有顏色) */
         .row-input.updated { animation: highlight 1s ease; }
 
         @keyframes highlight { 0% { background: #e3f2fd; } 100% { background: #fff; } }
@@ -56,8 +54,41 @@
 
         .status { text-align: right; color: #4caf50; font-size: 0.9rem; margin-top: 10px; height: 20px; }
 
-        /* 老師總覽畫面 */
-        .teacher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        /* --- 老師總覽畫面佈局設定 (本次修改重點) --- */
+
+        /* 1. 預設佈局：3 欄 */
+        /* 適用：5 組 (3上2下), 6 組 (3上3下), 9 組等 */
+        .teacher-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 20px; 
+        }
+
+        /* 2. 特殊佈局：4 組時強制 2 欄 (呈現 2x2) */
+        /* 此 class 透過 Vue 綁定動態加入 */
+        .teacher-grid.layout-2cols {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* --- 響應式斷點 (處理縮放與小螢幕) --- */
+
+        /* 3. 中型螢幕 (或瀏覽器放大) */
+        /* 當寬度小於 1024px 時，原本 3 欄的會自動降為 2 欄，避免太擠 */
+        @media (max-width: 1024px) {
+            .teacher-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+            }
+        }
+
+        /* 4. 小型螢幕 (手機 或 瀏覽器放大很多) */
+        /* 強制變成一欄向下，權重最高 */
+        @media (max-width: 768px) {
+            .teacher-grid, 
+            .teacher-grid.layout-2cols { 
+                grid-template-columns: 1fr; 
+            }
+        }
+        
         .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; }
         .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; display: flex; justify-content: space-between; align-items: center; }
         .group-content ul { padding-left: 20px; margin-top: 0; }
@@ -79,10 +110,6 @@
         .modal-actions { text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
 
         .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background: #f0f2f5; display: flex; justify-content: center; align-items: center; z-index: 999; font-size: 1.5rem; color: #666; }
-
-        @media (max-width: 768px) {
-            .teacher-grid { grid-template-columns: 1fr; }
-        }
     </style>
 </head>
 <body>
@@ -138,7 +165,7 @@
         </div>
 
         <div v-if="isTeacher">
-            <div class="teacher-grid">
+            <div class="teacher-grid" :class="{ 'layout-2cols': groupCount === 4 }">
                 <div v-for="i in groupCount" :key="i" class="group-card">
                     <h3>
                         第 {{ i }} 組 
@@ -227,7 +254,7 @@
                     isTeacher: false,
                     currentGroup: null,
                     
-                    // 學生端資料：改為物件陣列 [{key: '...', text: '...'}]
+                    // 學生端資料
                     inputLines: [], 
                     
                     saveStatus: '',
@@ -279,7 +306,7 @@
                 }
             },
             methods: {
-                // --- 學生功能 (即時協作版) ---
+                // --- 學生功能 ---
                 tryEnterGroup(num) {
                     this.attemptingGroup = num;
                     const requiredPwd = this.savedPasswords[num];
@@ -304,30 +331,23 @@
                     this.currentGroup = num;
                     this.isLoading = true;
 
-                    // **核心修改**：使用 .on() 進行持續監聽
                     db.ref('groups/group_' + num).on('value', (snapshot) => {
                         const val = snapshot.val();
                         this.isLoading = false;
 
                         if (!val) {
-                            // 如果完全沒資料，預設給一空行方便輸入
                             if (this.inputLines.length === 0) {
                                 this.addNewLine(); 
                             } else {
-                                // 如果是被清空了
                                 this.inputLines = [];
                                 this.addNewLine();
                             }
                             return;
                         }
 
-                        // 資料轉換：如果是舊格式(字串)，提示重置；如果是新格式(物件)，轉為陣列
                         if (typeof val === 'string') {
-                            // 簡單相容：把舊字串當成一個項目
                             this.inputLines = [{key: 'legacy', text: val}];
                         } else {
-                            // 將 Firebase 物件 {id1: val, id2: val} 轉為陣列 [{key:id1, text:val}]
-                            // 並保持 Firebase 的時間順序
                             const newList = [];
                             snapshot.forEach(childSnapshot => {
                                 newList.push({
@@ -335,50 +355,38 @@
                                     text: childSnapshot.val()
                                 });
                             });
-                            
-                            // 這裡做一個簡單的優化：如果正在打字，不要強制刷新整個列表導致焦點跑掉
-                            // 但因為我們有 v-model 和 key 綁定，Vue 通常處理得很好
                             this.inputLines = newList;
                         }
                     });
                 },
                 
-                // 更新單一項目 (只儲存變更的那一行，不覆蓋別人)
                 updateItem(item) {
                     this.saveStatus = '同步中...';
-                    // 這裡不需要 debounce 太久，因為只更新單一節點，衝突機率低
                     db.ref('groups/group_' + this.currentGroup + '/' + item.key).set(item.text)
                         .then(() => { this.saveStatus = '已同步'; })
                         .catch(() => { this.saveStatus = '同步失敗'; });
                 },
 
-                // 新增一行 (使用 push 產生唯一 ID，避免衝突)
                 addNewLine() {
                     db.ref('groups/group_' + this.currentGroup).push('').then(() => {
-                        // 新增後自動捲動到底部 (可選)
                         this.saveStatus = '已新增';
                     });
                 },
                 
-                // 刪除一行
                 removeItem(key) {
-                    // 至少保留一行不給刪 (為了版面好看)，除非是多行
-                    // 實際邏輯：直接刪除資料庫節點
                     db.ref('groups/group_' + this.currentGroup + '/' + key).remove();
                 },
 
-                // --- 老師功能 (適配新資料結構) ---
+                // --- 老師功能 ---
                 listenToAllData() {
                     db.ref('groups').on('value', (snapshot) => {
                         this.allGroupsData = snapshot.val() || {};
                     });
                 },
-                // 檢查該組是否有資料
                 hasData(groupIndex) {
                     const data = this.allGroupsData['group_' + groupIndex];
                     return data && (typeof data === 'string' || Object.keys(data).length > 0);
                 },
-                // 取得該組的文字列表 (同時支援舊字串與新物件格式)
                 getGroupLines(groupIndex) {
                     const data = this.allGroupsData['group_' + groupIndex];
                     if (!data) return [];
@@ -386,7 +394,6 @@
                     if (typeof data === 'string') {
                         return data.split('\n').filter(l => l.trim() !== '');
                     } else {
-                        // 物件格式，轉成陣列
                         return Object.values(data).filter(l => l && l.trim() !== '');
                     }
                 },
