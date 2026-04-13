@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>分組討論區 (無限組別大廳版)</title>
+    <title>分組討論區 (分點討論升級版)</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -32,7 +32,7 @@
         .room-meta { color: #888; font-size: 0.9rem; margin-bottom: 25px; flex: 1; }
         .room-actions { display: flex; flex-direction: column; gap: 10px; }
         
-        /* 輔助按鈕樣式 (大廳用) */
+        /* 輔助按鈕樣式 */
         .btn-upload { background: #ff9800; color: white; display: inline-block; cursor: pointer; padding: 10px 20px; border-radius: 5px; margin: 5px; text-align: center; text-decoration: none; border: none; font-size: 1rem;}
         .btn-upload:hover { opacity: 0.9; transform: translateY(-1px); }
 
@@ -67,6 +67,13 @@
         .student-view { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .group-badge { background: #1976d2; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; display: inline-block; margin-bottom: 20px;}
         
+        /* 學生畫面 - 分點區塊設計 */
+        .student-cat-box { background: #f9fbff; border: 1px solid #e3f2fd; border-radius: 8px; padding: 15px; margin-bottom: 20px; transition: 0.2s; }
+        .student-cat-box:hover { box-shadow: 0 2px 8px rgba(25,118,210,0.1); }
+        .student-cat-title { font-size: 1.15rem; font-weight: bold; color: #1976d2; margin-bottom: 12px; border-left: 4px solid #1976d2; padding-left: 10px; }
+        .btn-add-small { background: transparent; color: #1976d2; border: 1px dashed #90caf9; width: 100%; padding: 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.95rem; font-weight: bold;}
+        .btn-add-small:hover { background: #e3f2fd; }
+
         /* 動態輸入行 */
         .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
         .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(-30px); }
@@ -75,16 +82,13 @@
         .row-bullet { font-size: 1.5rem; margin-right: 10px; color: #333; line-height: 1; }
         .row-input { flex: 1; padding: 12px; font-size: 1.1rem; border: 1px solid #ddd; border-radius: 5px; outline: none; transition: border 0.2s, background 0.3s; }
         .row-input:focus { border-color: #1976d2; background: #fff; }
-        .row-input.updated { animation: highlight 1s ease; }
 
-        @keyframes highlight { 0% { background: #e3f2fd; } 100% { background: #fff; } }
-        
         .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; margin-left: 8px; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; transition: 0.2s; }
         .btn-del { background: #ffebee; color: #d32f2f; }
         .btn-del:hover { background: #d32f2f; color: white; }
         
-        /* 底部新增按鈕區 */
-        .add-bar { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; text-align: center; }
+        /* 底部新增按鈕區 (不分點模式使用) */
+        .add-bar { margin-top: 15px; padding-top: 15px; text-align: center; }
         .btn-add-big { background: #e3f2fd; color: #1976d2; width: 100%; padding: 12px; border-radius: 8px; border: 2px dashed #90caf9; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-add-big:hover { background: #bbdefb; border-color: #1976d2; }
 
@@ -97,9 +101,14 @@
         @media (max-width: 768px) { .teacher-grid, .teacher-grid.layout-2cols { grid-template-columns: 1fr; } }
         
         .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; }
-        .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; display: flex; justify-content: space-between; align-items: center; }
-        .group-content ul { padding-left: 20px; margin-top: 0; }
+        .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; display: flex; justify-content: space-between; align-items: center; font-size:1.2rem;}
+        
+        /* 老師畫面的分點樣式 */
+        .category-block { margin-bottom: 15px; }
+        .cat-title { margin: 10px 0 5px 0; color: #d84315; font-size: 1.05rem; border-bottom: 1px dashed #ffe0b2; padding-bottom: 3px; font-weight:bold;}
+        .group-content ul { padding-left: 20px; margin-top: 5px; margin-bottom: 5px;}
         .group-content li { margin-bottom: 5px; line-height: 1.5; word-break: break-all; }
+        
         .empty-text { color: #999; font-style: italic; }
         .btn-copy-small { background: #e0f2f1; color: #00796b; border: 1px solid #b2dfdb; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.2s; }
         .btn-copy-small:hover { background: #b2dfdb; }
@@ -109,9 +118,9 @@
 
         /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .modal-box { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-box { background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .modal-section { margin-bottom: 20px; }
+        .modal-section { margin-bottom: 20px; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee;}
         .modal-section h4 { margin: 0 0 10px 0; color: #555; }
         .modal-input-group { margin-bottom: 10px; display: flex; align-items: center; }
         .modal-input-group label { width: 80px; font-weight: bold; }
@@ -156,9 +165,8 @@
 
         <div v-else-if="currentView === 'room'" class="room-wrapper">
             
-            <div class="nav-buttons">
+            <div class="nav-buttons" v-if="isTeacher">
                 <a href="?" class="btn btn-back">⬅ 回大廳</a>
-                <button v-if="!isTeacher && currentGroup" class="btn btn-switch" @click="leaveGroup">🔄 重新選組</button>
             </div>
 
             <div class="container">
@@ -180,32 +188,54 @@
 
                 <div v-if="!isTeacher && currentGroup" class="student-view">
                     <div class="group-badge">您現在是：第 {{ currentGroup }} 組</div>
-                    
-                    <div style="margin-bottom: 15px; color: #555;">
-                        小組成員可以同時打字，資料會即時同步到所有人的畫面上。
-                    </div>
+                    <div style="margin-bottom: 15px; color: #555;">小組成員可以同時打字，資料會即時同步到所有人的畫面上。</div>
 
-                    <div class="dynamic-input-list">
-                        <transition-group name="list">
-                            <div v-for="(item, index) in inputLines" :key="item.key" class="input-row">
-                                <span class="row-bullet">●</span>
-                                
-                                <input 
-                                    type="text" 
-                                    class="row-input"
-                                    v-model="item.text" 
-                                    placeholder="輸入想法..."
-                                    @input="updateItem(item)"
-                                    @keydown.enter.prevent="addNewLine"
-                                >
-                                
-                                <button class="icon-btn btn-del" @click="removeItem(item.key)" title="刪除此行" tabindex="-1">🗑️</button>
+                    <div v-if="roomCategories && roomCategories.length > 0">
+                        <div v-for="cat in roomCategories" :key="cat.id" class="student-cat-box">
+                            <div class="student-cat-title">{{ cat.name }}</div>
+                            <div class="dynamic-input-list">
+                                <transition-group name="list">
+                                    <div v-for="item in (groupData[cat.id] || [])" :key="item.key" class="input-row">
+                                        <span class="row-bullet">●</span>
+                                        <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
+                                            @input="updateItem(cat.id, item)" @keydown.enter.prevent="addNewLine(cat.id)">
+                                        <button class="icon-btn btn-del" @click="removeItem(cat.id, item.key, item.isLegacy)" tabindex="-1" title="刪除">🗑️</button>
+                                    </div>
+                                </transition-group>
                             </div>
-                        </transition-group>
+                            <div class="add-bar" style="border-top:none; margin-top:0; padding-top:5px;">
+                                <button class="btn-add-small" @click="addNewLine(cat.id)">＋ 新增 {{ cat.name }} 的論點</button>
+                            </div>
+                        </div>
+
+                        <div v-if="orphanedData && orphanedData.length > 0" class="student-cat-box" style="border-color: #ffcc80; background: #fff8e1;">
+                            <div class="student-cat-title" style="color: #ef6c00; border-left-color: #ef6c00;">⚠️ 未分類 / 舊論點</div>
+                            <div class="dynamic-input-list">
+                                <transition-group name="list">
+                                    <div v-for="item in orphanedData" :key="item.key" class="input-row">
+                                        <span class="row-bullet">●</span>
+                                        <input type="text" class="row-input" v-model="item.text" @input="updateItem('default', item)">
+                                        <button class="icon-btn btn-del" @click="removeItem('default', item.key, item.isLegacy)" tabindex="-1">🗑️</button>
+                                    </div>
+                                </transition-group>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="add-bar">
-                        <button class="btn-add-big" @click="addNewLine">＋ 新增下一個論點</button>
+                    <div v-else>
+                        <div class="dynamic-input-list">
+                            <transition-group name="list">
+                                <div v-for="item in (groupData['default'] || [])" :key="item.key" class="input-row">
+                                    <span class="row-bullet">●</span>
+                                    <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
+                                        @input="updateItem('default', item)" @keydown.enter.prevent="addNewLine('default')">
+                                    <button class="icon-btn btn-del" @click="removeItem('default', item.key, item.isLegacy)" tabindex="-1">🗑️</button>
+                                </div>
+                            </transition-group>
+                        </div>
+                        <div class="add-bar" style="border-top: 1px dashed #eee;">
+                            <button class="btn-add-big" @click="addNewLine('default')">＋ 新增下一個論點</button>
+                        </div>
                     </div>
 
                     <div class="status">{{ saveStatus }}</div>
@@ -222,11 +252,17 @@
                                 </div>
                             </h3>
                             <div class="group-content">
-                                <ul v-if="hasData(i)">
-                                    <li v-for="(line, k) in getGroupLines(i)" :key="k">
-                                        {{ line }}
-                                    </li>
-                                </ul>
+                                <template v-if="hasData(i)">
+                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(i)" :key="bIndex" class="category-block">
+                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                            {{ block.title }}
+                                        </div>
+                                        <ul v-if="block.lines.length > 0">
+                                            <li v-for="(line, k) in block.lines" :key="k">{{ line }}</li>
+                                        </ul>
+                                        <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
+                                    </div>
+                                </template>
                                 <p v-else class="empty-text">尚無內容...</p>
                             </div>
                         </div>
@@ -234,16 +270,29 @@
 
                     <div class="teacher-controls">
                         <button class="btn btn-red" @click="resetAllData">🗑️ 清空所有組別討論內容</button>
-                        <button class="btn btn-blue" @click="openSettingsModal">⚙️ 系統設定 (組數/密碼)</button>
+                        <button class="btn btn-blue" @click="openSettingsModal">⚙️ 系統設定 (組數 / 分點 / 密碼)</button>
                     </div>
                 </div>
             </div>
 
             <div v-if="showTeacherModal" class="modal-overlay" @click.self="showTeacherModal = false">
                 <div class="modal-box">
-                    <div class="modal-title">⚙️ 系統設定 (此課程專屬)</div>
+                    <div class="modal-title">⚙️ 系統設定 (此討論區專屬)</div>
+                    
                     <div class="modal-section">
-                        <h4>1. 設定總組數 (1~10)</h4>
+                        <h4>1. 討論分點設定</h4>
+                        <p style="font-size:0.9rem; color:#666; margin-top:0;">設定讓學員分區塊討論的主題。若不需分點，請將下方清單留空即可維持「開放式討論」。</p>
+                        
+                        <div v-for="(cat, index) in tempCategories" :key="cat.id" class="modal-input-group">
+                            <label>分點 {{ index + 1 }}</label>
+                            <input type="text" v-model="cat.name" placeholder="例如：活動前 / 財務面-成本...">
+                            <button class="icon-btn btn-del" @click="removeTempCategory(index)" title="移除此分點">🗑️</button>
+                        </div>
+                        <button class="btn btn-gray" @click="addTempCategory" style="width:100%; border:1px dashed #ccc; background:#fff;">＋ 新增討論分點</button>
+                    </div>
+
+                    <div class="modal-section">
+                        <h4>2. 設定總組數 (1~10)</h4>
                         <div class="modal-input-group">
                             <label>組數：</label>
                             <select v-model.number="tempGroupCount">
@@ -251,13 +300,15 @@
                             </select>
                         </div>
                     </div>
+
                     <div class="modal-section">
-                        <h4>2. 設定各組密碼 (留空即不設防)</h4>
+                        <h4>3. 設定各組密碼 (留空即不設防)</h4>
                         <div v-for="i in tempGroupCount" :key="i" class="modal-input-group">
                             <label>第 {{i}} 組</label>
                             <input type="text" v-model="tempPasswords[i]" placeholder="設定密碼...">
                         </div>
                     </div>
+
                     <div class="modal-actions">
                         <button class="btn btn-gray" @click="showTeacherModal = false">取消</button>
                         <button class="btn btn-green" @click="saveSettings">儲存設定</button>
@@ -283,7 +334,7 @@
     </div>
 
     <script>
-        const { createApp, nextTick } = Vue;
+        const { createApp } = Vue;
 
         const firebaseConfig = {
             apiKey: "AIzaSyDUPGhkiJgxeYDYHqEaXCYvKh2vdTGqypw",
@@ -315,10 +366,13 @@
                     isTeacher: false,
                     currentGroup: null,
                     
-                    inputLines: [], 
+                    // --- 支援多階層的資料結構 ---
+                    groupData: {}, // 格式: { 'cat_1': [{key, text}], 'default': [{key, text}] }
+                    orphanedData: [], // 當切換為分點模式時，暫存舊的未分類資料
+                    roomCategories: [], // 格式: [{id: 'cat_x', name: '活動前'}]
+                    tempCategories: [], // Modal 暫存區
+
                     saveStatus: '',
-                    typingTimer: null,
-                    
                     allGroupsData: {},
                     
                     groupCount: 6,
@@ -369,6 +423,7 @@
                         const settings = snapshot.val() || {};
                         this.savedPasswords = settings.passwords || {};
                         this.groupCount = settings.groupCount || 6;
+                        this.roomCategories = settings.categories || []; // 讀取分點設定
                         this.isLoading = false;
                         
                         if (this.pendingAutoGroup) {
@@ -389,7 +444,7 @@
                     if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
                     newRoomRef.set({ name: this.newRoomName.trim(), createdAt: Date.now() });
-                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {} });
+                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [] });
                     this.newRoomName = '';
                     alert('✅ 討論區建立成功！');
                 },
@@ -417,13 +472,11 @@
                     document.body.removeChild(tempInput);
                     alert('✅ 學員總選單連結已複製到剪貼簿！');
                 },
-                
-                // --- 新增：複製單一組別專屬連結 ---
                 copySpecificGroupLink(groupNum) {
                     const url = new URL(window.location.href);
-                    url.searchParams.delete('role'); // 確保是學員身分
+                    url.searchParams.delete('role'); 
                     url.searchParams.set('room', this.roomId);
-                    url.searchParams.set('group', groupNum); // 寫入組別參數
+                    url.searchParams.set('group', groupNum); 
                     
                     const tempInput = document.createElement("input");
                     tempInput.value = url.href;
@@ -457,90 +510,179 @@
                     this.currentGroup = num;
                     this.isLoading = true;
 
-                    // --- 重點更新：改變網址列參數，讓學員刷新也不會跳掉 ---
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.set('group', num);
                     window.history.replaceState({}, '', newUrl.href);
 
                     db.ref(`discussion_rooms/${this.roomId}/groups/group_${num}`).on('value', (snapshot) => {
-                        const val = snapshot.val();
-                        this.isLoading = false;
+                        const val = snapshot.val() || {};
+                        let newGroupData = {};
+                        let newOrphanedData = [];
 
-                        if (!val) {
-                            if (this.inputLines.length === 0) { this.addNewLine(); } 
-                            else { this.inputLines = []; this.addNewLine(); }
-                            return;
+                        if (this.roomCategories && this.roomCategories.length > 0) {
+                            // --- 分點模式 ---
+                            this.roomCategories.forEach(cat => {
+                                const catData = val[cat.id] || {};
+                                newGroupData[cat.id] = Object.keys(catData).map(k => ({key: k, text: catData[k]}));
+                            });
+                            
+                            // 抓出舊有的、未歸類的資料 (防呆)
+                            const defaultData = val['default'] || {};
+                            newOrphanedData = Object.keys(defaultData).map(k => ({key: k, text: defaultData[k]}));
+                            Object.keys(val).forEach(k => {
+                                if (k !== 'default' && !this.roomCategories.find(c => c.id === k) && typeof val[k] === 'string') {
+                                    newOrphanedData.push({key: k, text: val[k], isLegacy: true});
+                                }
+                            });
+                        } else {
+                            // --- 不分點 (預設/舊版) 模式 ---
+                            const defaultData = val['default'] || {};
+                            let parsedDefault = Object.keys(defaultData).map(k => ({key: k, text: defaultData[k]}));
+
+                            // 相容舊版無 default 資料夾的結構
+                            Object.keys(val).forEach(k => {
+                                if (k !== 'default' && typeof val[k] === 'string') {
+                                    parsedDefault.push({key: k, text: val[k], isLegacy: true});
+                                }
+                            });
+                            newGroupData['default'] = parsedDefault;
                         }
 
-                        if (typeof val === 'string') {
-                            this.inputLines = [{key: 'legacy', text: val}];
-                        } else {
-                            const newList = [];
-                            snapshot.forEach(childSnapshot => {
-                                newList.push({ key: childSnapshot.key, text: childSnapshot.val() });
-                            });
-                            this.inputLines = newList;
+                        this.groupData = newGroupData;
+                        this.orphanedData = newOrphanedData;
+                        this.isLoading = false;
+
+                        // 若該組資料完全空白，自動建立第一行輸入框
+                        if (Object.keys(val).length === 0) {
+                            if (this.roomCategories && this.roomCategories.length > 0) {
+                                this.roomCategories.forEach(cat => this.addNewLine(cat.id));
+                            } else {
+                                this.addNewLine('default');
+                            }
                         }
                     });
                 },
-                
-                // --- 新增功能：學員退回重新選組 ---
+                // 保留 function 供日後擴充參考，但畫面上已經移除此按鈕的呼叫點
                 leaveGroup() {
                     this.currentGroup = null;
-                    this.inputLines = [];
-                    // 移除網址上的 group 參數
+                    this.groupData = {};
+                    this.orphanedData = [];
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.delete('group');
                     window.history.replaceState({}, '', newUrl.href);
                 },
                 
-                updateItem(item) {
-                    this.saveStatus = '同步中...';
-                    db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${item.key}`).set(item.text)
-                        .then(() => { this.saveStatus = '已同步'; })
-                        .catch(() => { this.saveStatus = '同步失敗'; });
-                },
-                addNewLine() {
-                    db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}`).push('').then(() => {
+                // 新增/更新/刪除：加入了分類(catId)與舊紀錄(isLegacy)的判斷
+                addNewLine(catId) {
+                    db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${catId}`).push('').then(() => {
                         this.saveStatus = '已新增';
                     });
                 },
-                removeItem(key) {
-                    db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${key}`).remove();
+                updateItem(catId, item) {
+                    this.saveStatus = '同步中...';
+                    const refPath = item.isLegacy 
+                        ? `discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${item.key}` // 舊紀錄寫回原本的地方
+                        : `discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${catId}/${item.key}`;
+
+                    db.ref(refPath).set(item.text)
+                        .then(() => { this.saveStatus = '已同步'; })
+                        .catch(() => { this.saveStatus = '同步失敗'; });
                 },
+                removeItem(catId, key, isLegacy) {
+                    const refPath = isLegacy 
+                        ? `discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${key}`
+                        : `discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${catId}/${key}`;
+                    db.ref(refPath).remove();
+                },
+
+                // --- 老師總覽資料相關 ---
                 listenToAllData() {
                     db.ref(`discussion_rooms/${this.roomId}/groups`).on('value', (snapshot) => {
                         this.allGroupsData = snapshot.val() || {};
                     });
                 },
-                hasData(groupIndex) {
+                getGroupCategoriesAndLines(groupIndex) {
                     const data = this.allGroupsData['group_' + groupIndex];
-                    return data && (typeof data === 'string' || Object.keys(data).length > 0);
+                    if (!data) return []; 
+
+                    let result = [];
+                    if (this.roomCategories && this.roomCategories.length > 0) {
+                        // 有分點設定的渲染
+                        this.roomCategories.forEach(cat => {
+                            let lines = [];
+                            if (data[cat.id]) {
+                                lines = Object.values(data[cat.id]).filter(l => l && l.trim() !== '');
+                            }
+                            result.push({ title: cat.name, lines: lines });
+                        });
+                        
+                        // 檢查是否有未分類/舊紀錄資料
+                        let orphanedLines = [];
+                        if (data['default']) orphanedLines.push(...Object.values(data['default']).filter(l => l && l.trim() !== ''));
+                        Object.keys(data).forEach(k => {
+                            if (k !== 'default' && !this.roomCategories.find(c => c.id === k) && typeof data[k] === 'string' && data[k].trim() !== '') {
+                                orphanedLines.push(data[k]);
+                            }
+                        });
+                        if (orphanedLines.length > 0) {
+                            result.push({ title: '⚠️ 未分類 / 舊紀錄', lines: orphanedLines, isOrphaned: true });
+                        }
+                    } else {
+                        // 無分點的單一渲染
+                        let lines = [];
+                        if (data['default']) {
+                            lines = Object.values(data['default']).filter(l => l && l.trim() !== '');
+                        }
+                        Object.keys(data).forEach(k => {
+                            if (k !== 'default' && typeof data[k] === 'string' && data[k].trim() !== '') {
+                                lines.push(data[k]);
+                            }
+                        });
+                        if (lines.length > 0) {
+                            result.push({ title: null, lines: lines });
+                        }
+                    }
+                    return result;
                 },
-                getGroupLines(groupIndex) {
-                    const data = this.allGroupsData['group_' + groupIndex];
-                    if (!data) return [];
-                    if (typeof data === 'string') { return data.split('\n').filter(l => l.trim() !== ''); } 
-                    else { return Object.values(data).filter(l => l && l.trim() !== ''); }
+                hasData(groupIndex) {
+                    const blocks = this.getGroupCategoriesAndLines(groupIndex);
+                    return blocks.some(b => b.lines.length > 0);
                 },
                 resetAllData() {
-                    if(confirm('確定要清空所有組別的討論內容嗎？\n(這只會清空當前房間的資料，不會影響設定與其他房間)')) {
+                    if(confirm('確定要清空所有組別的討論內容嗎？\n(這只會清空討論內容，不會影響分點與組數設定)')) {
                         db.ref(`discussion_rooms/${this.roomId}/groups`).set(null);
                         this.allGroupsData = {};
                     }
                 },
+
+                // --- 系統設定 Modal 相關 ---
                 openSettingsModal() {
                     this.tempPasswords = { ...this.savedPasswords };
                     this.tempGroupCount = this.groupCount;
+                    // 深拷貝一份目前的分類，供 Modal 編輯
+                    this.tempCategories = JSON.parse(JSON.stringify(this.roomCategories || []));
                     this.showTeacherModal = true;
                 },
+                addTempCategory() {
+                    this.tempCategories.push({ 
+                        id: 'cat_' + Date.now() + '_' + Math.floor(Math.random()*1000), 
+                        name: '' 
+                    });
+                },
+                removeTempCategory(index) {
+                    this.tempCategories.splice(index, 1);
+                },
                 saveSettings() {
+                    // 過濾掉空白的分類名稱
+                    const validCategories = this.tempCategories.filter(c => c.name.trim() !== '');
+
                     db.ref(`discussion_rooms/${this.roomId}/settings`).update({
                         passwords: this.tempPasswords,
-                        groupCount: this.tempGroupCount
+                        groupCount: this.tempGroupCount,
+                        categories: validCategories
                     }).then(() => {
                         this.showTeacherModal = false;
-                        alert('此討論區的系統設定已更新！');
+                        alert('⚙️ 討論區系統設定已更新！');
                     });
                 }
             }
