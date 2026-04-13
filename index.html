@@ -37,7 +37,7 @@
         .btn-upload:hover { opacity: 0.9; transform: translateY(-1px); }
 
         /* === 討論區 (房間內) 樣式 === */
-        .room-wrapper { padding: 20px; }
+        .room-wrapper { padding: 20px; position: relative; }
         .container { max-width: 1000px; margin: 0 auto; padding-bottom: 50px; }
         h1 { text-align: center; color: #333; margin-bottom: 10px; }
         .room-title { text-align: center; color: #1976d2; font-size: 1.2rem; margin-bottom: 30px; font-weight: bold; }
@@ -50,7 +50,12 @@
         .btn-blue { background: #1976d2; color: white; }
         .btn-green { background: #4caf50; color: white; }
         .btn-gray { background: #ccc; color: #333; }
-        .btn-back { background: #f0f2f5; color: #555; border: 1px solid #ccc; position: absolute; top: 20px; left: 20px; }
+        
+        /* 頂部導覽列按鈕 */
+        .nav-buttons { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; }
+        .nav-buttons > * { pointer-events: auto; }
+        .btn-back { background: #f0f2f5; color: #555; border: 1px solid #ccc; margin: 0; }
+        .btn-switch { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; margin: 0; }
 
         /* 登入選組畫面 */
         .group-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
@@ -96,6 +101,8 @@
         .group-content ul { padding-left: 20px; margin-top: 0; }
         .group-content li { margin-bottom: 5px; line-height: 1.5; word-break: break-all; }
         .empty-text { color: #999; font-style: italic; }
+        .btn-copy-small { background: #e0f2f1; color: #00796b; border: 1px solid #b2dfdb; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-copy-small:hover { background: #b2dfdb; }
         
         /* 控制項 */
         .teacher-controls { text-align: center; margin-top: 40px; margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; border-top: 1px dashed #ccc; padding-top: 20px; }
@@ -134,7 +141,7 @@
                         
                         <div class="room-actions">
                             <a :href="getRoomLink(room.id, 'teacher')" class="btn btn-primary" style="font-weight: bold;">👨‍🏫 進入講師總覽</a>
-                            <button class="btn btn-upload" @click="copyLink(room.id, 'student')" style="font-weight: bold;">🔗 複製學員連結</button>
+                            <button class="btn btn-upload" @click="copyLink(room.id, 'student')" style="font-weight: bold;">🔗 複製學員總連結</button>
                             <button class="btn btn-red" @click="deleteRoom(room.id)" style="width: 100%; box-sizing: border-box;">🗑️ 刪除討論區</button>
                         </div>
                     </div>
@@ -149,11 +156,14 @@
 
         <div v-else-if="currentView === 'room'" class="room-wrapper">
             
-            <a href="?" class="btn btn-back">⬅ 回大廳</a>
+            <div class="nav-buttons">
+                <a href="?" class="btn btn-back">⬅ 回大廳</a>
+                <button v-if="!isTeacher && currentGroup" class="btn btn-switch" @click="leaveGroup">🔄 重新選組</button>
+            </div>
 
             <div class="container">
-                <h1>{{ isTeacher ? '講師總覽看板' : (currentGroup ? '分組討論區' : '請選擇組別') }}</h1>
-                <div class="room-title">📍 當前課程：{{ currentRoomName }}</div>
+                <h1 style="margin-top: 30px;">{{ isTeacher ? '講師總覽看板' : (currentGroup ? '分組討論區' : '請選擇組別') }}</h1>
+                <div class="room-title">📍 當前討論：{{ currentRoomName }}</div>
 
                 <div v-if="!isTeacher && !currentGroup" class="group-selector-container">
                     <div style="text-align: center; margin-bottom: 15px; color: #666;">
@@ -206,7 +216,10 @@
                         <div v-for="i in groupCount" :key="i" class="group-card">
                             <h3>
                                 第 {{ i }} 組 
-                                <span v-if="savedPasswords[i]" title="已啟用密碼保護" style="font-size:1rem;">🔒</span>
+                                <div>
+                                    <span v-if="savedPasswords[i]" title="已啟用密碼保護" style="font-size:1rem; margin-right:5px;">🔒</span>
+                                    <button class="btn-copy-small" @click="copySpecificGroupLink(i)" title="複製此組專屬連結">🔗 專屬連結</button>
+                                </div>
                             </h3>
                             <div class="group-content">
                                 <ul v-if="hasData(i)">
@@ -283,7 +296,6 @@
             measurementId: "G-XYN5JV48T7"
         };
 
-        // 確保 Firebase 只初始化一次
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -293,27 +305,22 @@
             data() {
                 return {
                     isLoading: true,
-                    currentView: 'lobby', // 'lobby' 或 'room'
+                    currentView: 'lobby', 
                     
-                    // 大廳變數
                     roomsList: [],
                     newRoomName: '',
                     
-                    // 房間變數
                     roomId: '',
                     currentRoomName: '',
                     isTeacher: false,
                     currentGroup: null,
                     
-                    // 學生端資料
                     inputLines: [], 
                     saveStatus: '',
                     typingTimer: null,
                     
-                    // 老師端資料
                     allGroupsData: {},
                     
-                    // 房間設定
                     groupCount: 6,
                     savedPasswords: {}, 
                     showTeacherModal: false,
@@ -338,38 +345,32 @@
                 const groupParam = urlParams.get('group');
 
                 if (!roomParam) {
-                    // === 進入大廳模式 ===
                     this.currentView = 'lobby';
-                    // 更換獨立的路徑：discussion_roomsList
                     db.ref('discussion_roomsList').on('value', snap => {
                         const val = snap.val();
                         this.roomsList = val ? Object.keys(val).map(key => ({ id: key, ...val[key] })) : [];
-                        // 依照建立時間排序 (新的在前)
                         this.roomsList.sort((a, b) => b.createdAt - a.createdAt);
                         this.isLoading = false;
                     });
                 } else {
-                    // === 進入討論區模式 ===
                     this.currentView = 'room';
                     this.roomId = roomParam;
                     this.isTeacher = (roleParam === 'teacher');
+                    
                     if (groupParam && !this.isTeacher) {
                         this.pendingAutoGroup = parseInt(groupParam);
                     }
 
-                    // 取得房間名稱
                     db.ref(`discussion_roomsList/${this.roomId}/name`).once('value', snap => {
                         this.currentRoomName = snap.val() || '未命名討論區';
                     });
                     
-                    // 載入該房間的專屬設定 (更換為 discussion_rooms)
                     db.ref(`discussion_rooms/${this.roomId}/settings`).on('value', (snapshot) => {
                         const settings = snapshot.val() || {};
                         this.savedPasswords = settings.passwords || {};
                         this.groupCount = settings.groupCount || 6;
                         this.isLoading = false;
                         
-                        // 自動進入特定組別邏輯
                         if (this.pendingAutoGroup) {
                             if (this.pendingAutoGroup <= this.groupCount) {
                                 this.tryEnterGroup(this.pendingAutoGroup);
@@ -384,23 +385,11 @@
                 }
             },
             methods: {
-                // --- 大廳功能 ---
                 createRoom() {
-                    if(!this.newRoomName.trim()) {
-                        alert('請輸入討論區名稱'); return;
-                    }
+                    if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
-                    newRoomRef.set({
-                        name: this.newRoomName.trim(),
-                        createdAt: Date.now()
-                    });
-                    
-                    // 初始化該房間的預設設定 (6組，無密碼)
-                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({
-                        groupCount: 6,
-                        passwords: {}
-                    });
-                    
+                    newRoomRef.set({ name: this.newRoomName.trim(), createdAt: Date.now() });
+                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {} });
                     this.newRoomName = '';
                     alert('✅ 討論區建立成功！');
                 },
@@ -414,11 +403,8 @@
                 getRoomLink(roomId, role) {
                     const url = new URL(window.location.href);
                     url.searchParams.set('room', roomId);
-                    if (role === 'teacher') {
-                        url.searchParams.set('role', 'teacher');
-                    } else {
-                        url.searchParams.delete('role');
-                    }
+                    if (role === 'teacher') { url.searchParams.set('role', 'teacher'); } 
+                    else { url.searchParams.delete('role'); url.searchParams.delete('group'); }
                     return url.href;
                 },
                 copyLink(roomId, role) {
@@ -429,14 +415,28 @@
                     tempInput.select();
                     document.execCommand("copy");
                     document.body.removeChild(tempInput);
-                    alert('✅ 學員連結已複製到剪貼簿！\n\n可直接貼上傳送給學員，他們點開就能選擇組別並開始討論。');
+                    alert('✅ 學員總選單連結已複製到剪貼簿！');
+                },
+                
+                // --- 新增：複製單一組別專屬連結 ---
+                copySpecificGroupLink(groupNum) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('role'); // 確保是學員身分
+                    url.searchParams.set('room', this.roomId);
+                    url.searchParams.set('group', groupNum); // 寫入組別參數
+                    
+                    const tempInput = document.createElement("input");
+                    tempInput.value = url.href;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(tempInput);
+                    alert(`✅ 第 ${groupNum} 組專屬連結已複製！\n學員點擊將直接跳轉至此組（若有設密碼仍會要求輸入）。`);
                 },
 
-                // --- 房間內：學生功能 ---
                 tryEnterGroup(num) {
                     this.attemptingGroup = num;
                     const requiredPwd = this.savedPasswords[num];
-                    
                     if (requiredPwd && requiredPwd.trim() !== '') {
                         this.studentInputPassword = '';
                         this.loginError = '';
@@ -457,18 +457,18 @@
                     this.currentGroup = num;
                     this.isLoading = true;
 
-                    // 綁定特定房間與組別的資料
+                    // --- 重點更新：改變網址列參數，讓學員刷新也不會跳掉 ---
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set('group', num);
+                    window.history.replaceState({}, '', newUrl.href);
+
                     db.ref(`discussion_rooms/${this.roomId}/groups/group_${num}`).on('value', (snapshot) => {
                         const val = snapshot.val();
                         this.isLoading = false;
 
                         if (!val) {
-                            if (this.inputLines.length === 0) {
-                                this.addNewLine(); 
-                            } else {
-                                this.inputLines = [];
-                                this.addNewLine();
-                            }
+                            if (this.inputLines.length === 0) { this.addNewLine(); } 
+                            else { this.inputLines = []; this.addNewLine(); }
                             return;
                         }
 
@@ -477,14 +477,21 @@
                         } else {
                             const newList = [];
                             snapshot.forEach(childSnapshot => {
-                                newList.push({
-                                    key: childSnapshot.key,
-                                    text: childSnapshot.val()
-                                });
+                                newList.push({ key: childSnapshot.key, text: childSnapshot.val() });
                             });
                             this.inputLines = newList;
                         }
                     });
+                },
+                
+                // --- 新增功能：學員退回重新選組 ---
+                leaveGroup() {
+                    this.currentGroup = null;
+                    this.inputLines = [];
+                    // 移除網址上的 group 參數
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.delete('group');
+                    window.history.replaceState({}, '', newUrl.href);
                 },
                 
                 updateItem(item) {
@@ -493,18 +500,14 @@
                         .then(() => { this.saveStatus = '已同步'; })
                         .catch(() => { this.saveStatus = '同步失敗'; });
                 },
-
                 addNewLine() {
                     db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}`).push('').then(() => {
                         this.saveStatus = '已新增';
                     });
                 },
-                
                 removeItem(key) {
                     db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.currentGroup}/${key}`).remove();
                 },
-
-                // --- 房間內：老師功能 ---
                 listenToAllData() {
                     db.ref(`discussion_rooms/${this.roomId}/groups`).on('value', (snapshot) => {
                         this.allGroupsData = snapshot.val() || {};
@@ -517,12 +520,8 @@
                 getGroupLines(groupIndex) {
                     const data = this.allGroupsData['group_' + groupIndex];
                     if (!data) return [];
-                    
-                    if (typeof data === 'string') {
-                        return data.split('\n').filter(l => l.trim() !== '');
-                    } else {
-                        return Object.values(data).filter(l => l && l.trim() !== '');
-                    }
+                    if (typeof data === 'string') { return data.split('\n').filter(l => l.trim() !== ''); } 
+                    else { return Object.values(data).filter(l => l && l.trim() !== ''); }
                 },
                 resetAllData() {
                     if(confirm('確定要清空所有組別的討論內容嗎？\n(這只會清空當前房間的資料，不會影響設定與其他房間)')) {
@@ -530,8 +529,6 @@
                         this.allGroupsData = {};
                     }
                 },
-                
-                // --- 房間內：系統設定 ---
                 openSettingsModal() {
                     this.tempPasswords = { ...this.savedPasswords };
                     this.tempGroupCount = this.groupCount;
