@@ -30,7 +30,11 @@
         .room-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         .room-card h3 { margin: 0 0 10px 0; color: #333; font-size: 1.4rem; }
         .room-meta { color: #888; font-size: 0.9rem; margin-bottom: 25px; flex: 1; }
-        .room-actions { display: flex; flex-direction: column; gap: 10px; }
+        
+        /* 調整過後的 Actions 排版 (為了容納新增的按鈕) */
+        .room-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .room-actions .btn, .room-actions .btn-upload { margin: 0; box-sizing: border-box; width: 100%; }
+        .room-actions .btn-full { grid-column: 1 / -1; }
         
         /* 輔助按鈕樣式 */
         .btn-upload { background: #ff9800; color: white; display: inline-block; cursor: pointer; padding: 10px 20px; border-radius: 5px; margin: 5px; text-align: center; text-decoration: none; border: none; font-size: 1rem;}
@@ -49,7 +53,8 @@
         .btn-red { background: #ff5252; color: white; }
         .btn-blue { background: #1976d2; color: white; }
         .btn-green { background: #4caf50; color: white; }
-        .btn-gray { background: #ccc; color: #333; }
+        .btn-gray { background: #e0e0e0; color: #333; }
+        .btn-gray:hover { background: #ccc; }
         
         /* 頂部導覽列按鈕 */
         .nav-buttons { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; }
@@ -134,7 +139,18 @@
     <div id="app">
         <div v-if="isLoading" class="loading-mask">資料讀取中...</div>
 
-        <div v-if="currentView === 'lobby'" class="lobby-wrapper">
+        <div v-if="currentView === 'lobby' && !lobbyAuthenticated" class="lobby-wrapper" style="display: flex; justify-content: center; align-items: center;">
+            <div class="modal-box" style="text-align: center;">
+                <div class="modal-title">🔒 請輸入大廳管理密碼</div>
+                <div class="modal-input-group" style="justify-content: center; margin-top: 20px;">
+                    <input type="password" v-model="lobbyPasswordInput" placeholder="輸入大廳密碼..." @keydown.enter="verifyLobbyPassword" style="font-size:1.2rem; text-align:center; padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 80%;">
+                </div>
+                <div style="color:red; margin-bottom:15px; min-height: 20px;">{{ lobbyPasswordError }}</div>
+                <button class="btn btn-blue" @click="verifyLobbyPassword" style="font-size: 1.1rem; padding: 10px 30px;">登入管理大廳</button>
+            </div>
+        </div>
+
+        <div v-if="currentView === 'lobby' && lobbyAuthenticated" class="lobby-wrapper">
             <div class="lobby-container">
                 <div class="lobby-header">📚 分組討論區管理大廳</div>
                 
@@ -149,9 +165,11 @@
                         <div class="room-meta">建立於: {{ new Date(room.createdAt).toLocaleString() }}</div>
                         
                         <div class="room-actions">
-                            <a :href="getRoomLink(room.id, 'teacher')" class="btn btn-primary" style="font-weight: bold;">👨‍🏫 進入講師總覽</a>
-                            <button class="btn btn-upload" @click="copyLink(room.id, 'student')" style="font-weight: bold;">🔗 複製學員總連結</button>
-                            <button class="btn btn-red" @click="deleteRoom(room.id)" style="width: 100%; box-sizing: border-box;">🗑️ 刪除討論區</button>
+                            <a :href="getRoomLink(room.id, 'teacher')" class="btn btn-primary btn-full" style="font-weight: bold;">👨‍🏫 進入講師總覽</a>
+                            <button class="btn btn-upload btn-full" @click="copyLink(room.id, 'student')" style="font-weight: bold;">🔗 複製學員總連結</button>
+                            <button class="btn btn-gray" @click="renameRoom(room)">✏️ 編輯名稱</button>
+                            <button class="btn btn-green" @click="duplicateRoom(room)">📑 複製主題</button>
+                            <button class="btn btn-red btn-full" @click="deleteRoom(room.id)">🗑️ 刪除討論區</button>
                         </div>
                     </div>
                     
@@ -358,6 +376,11 @@
                     isLoading: true,
                     currentView: 'lobby', 
                     
+                    // --- 新增：大廳密碼驗證狀態 ---
+                    lobbyAuthenticated: false,
+                    lobbyPasswordInput: '',
+                    lobbyPasswordError: '',
+
                     roomsList: [],
                     newRoomName: '',
                     
@@ -367,10 +390,10 @@
                     currentGroup: null,
                     
                     // --- 支援多階層的資料結構 ---
-                    groupData: {}, // 格式: { 'cat_1': [{key, text}], 'default': [{key, text}] }
-                    orphanedData: [], // 當切換為分點模式時，暫存舊的未分類資料
-                    roomCategories: [], // 格式: [{id: 'cat_x', name: '活動前'}]
-                    tempCategories: [], // Modal 暫存區
+                    groupData: {}, 
+                    orphanedData: [], 
+                    roomCategories: [], 
+                    tempCategories: [], 
 
                     saveStatus: '',
                     allGroupsData: {},
@@ -423,7 +446,7 @@
                         const settings = snapshot.val() || {};
                         this.savedPasswords = settings.passwords || {};
                         this.groupCount = settings.groupCount || 6;
-                        this.roomCategories = settings.categories || []; // 讀取分點設定
+                        this.roomCategories = settings.categories || []; 
                         this.isLoading = false;
                         
                         if (this.pendingAutoGroup) {
@@ -440,6 +463,42 @@
                 }
             },
             methods: {
+                // --- 新增：大廳密碼驗證邏輯 ---
+                verifyLobbyPassword() {
+                    if (this.lobbyPasswordInput === '20150117') {
+                        this.lobbyAuthenticated = true;
+                        this.lobbyPasswordError = '';
+                    } else {
+                        this.lobbyPasswordError = '大廳密碼錯誤，請重新輸入';
+                        this.lobbyPasswordInput = '';
+                    }
+                },
+                // --- 新增：重新命名與複製房間邏輯 ---
+                renameRoom(room) {
+                    const newName = prompt('請輸入新的討論區名稱：', room.name);
+                    if (newName && newName.trim() !== '' && newName !== room.name) {
+                        db.ref(`discussion_roomsList/${room.id}`).update({ name: newName.trim() })
+                            .then(() => alert('✅ 重新命名成功！'))
+                            .catch(err => alert('❌ 重新命名失敗：' + err.message));
+                    }
+                },
+                duplicateRoom(room) {
+                    const newName = prompt('請輸入複製的主題名稱：', room.name + ' - 複製');
+                    if (newName && newName.trim() !== '') {
+                        // 建立新的房間清單
+                        const newRoomRef = db.ref('discussion_roomsList').push();
+                        newRoomRef.set({ name: newName.trim(), createdAt: Date.now() });
+                        
+                        // 抓取舊房間的設定檔並套用至新房間
+                        db.ref(`discussion_rooms/${room.id}/settings`).once('value', (snap) => {
+                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [] };
+                            db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set(oldSettings)
+                                .then(() => alert('✅ 討論區與其設定複製成功！(舊討論內容未複製)'))
+                                .catch(err => alert('❌ 複製失敗：' + err.message));
+                        });
+                    }
+                },
+
                 createRoom() {
                     if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
@@ -562,7 +621,6 @@
                         }
                     });
                 },
-                // 保留 function 供日後擴充參考，但畫面上已經移除此按鈕的呼叫點
                 leaveGroup() {
                     this.currentGroup = null;
                     this.groupData = {};
