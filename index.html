@@ -102,6 +102,12 @@
 
         .status { text-align: right; color: #4caf50; font-size: 0.9rem; margin-top: 10px; height: 20px; }
 
+        /* --- 換組顯示的作者標籤樣式 --- */
+        .readonly-item { flex: 1; padding: 12px; font-size: 1.1rem; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 5px; display: flex; align-items: center; box-sizing: border-box; min-height: 48px; word-break: break-all;}
+        .author-tag { font-size: 0.85rem; background: #e0e7ff; color: #4338ca; padding: 3px 8px; border-radius: 4px; font-weight: bold; white-space: nowrap; margin-right: 8px; border: 1px solid #c7d2fe; user-select: none;}
+        .author-tag-self { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .author-tag-teacher { font-size: 0.75rem; background: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-weight: bold; white-space: nowrap; margin-right: 6px; border: 1px solid #c7d2fe; display: inline-block; vertical-align: text-bottom;}
+
         /* --- 老師畫面 --- */
         .teacher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .teacher-grid.layout-2cols { grid-template-columns: repeat(2, 1fr); }
@@ -117,7 +123,7 @@
         .category-block { margin-bottom: 15px; }
         .cat-title { margin: 10px 0 5px 0; color: #d84315; font-size: 1.05rem; border-bottom: 1px dashed #ffe0b2; padding-bottom: 3px; font-weight:bold;}
         .group-content ul { padding-left: 20px; margin-top: 5px; margin-bottom: 5px;}
-        .group-content li { margin-bottom: 5px; line-height: 1.5; word-break: break-all; }
+        .group-content li { margin-bottom: 8px; line-height: 1.5; word-break: break-all; }
         
         .empty-text { color: #999; font-style: italic; }
         .btn-copy-small { background: #e0f2f1; color: #00796b; border: 1px solid #b2dfdb; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.2s; }
@@ -227,9 +233,22 @@
                                 <transition-group name="list">
                                     <div v-for="item in (groupData[cat.id] || [])" :key="item.key" class="input-row">
                                         <span class="row-bullet">●</span>
-                                        <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
-                                            @input="updateItem(cat.id, item)" @keydown.enter.prevent="addNewLine(cat.id)">
-                                        <button class="icon-btn btn-del" @click="removeItem(cat.id, item.key, item.isLegacy)" tabindex="-1" title="刪除">🗑️</button>
+                                        
+                                        <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup">
+                                            <div class="readonly-item">
+                                                <span class="author-tag">第 {{item.authorGroup}} 組</span>
+                                                <span>{{ item.text }}</span>
+                                            </div>
+                                        </template>
+                                        
+                                        <template v-else>
+                                            <div style="flex: 1; display: flex; align-items: center;">
+                                                <span v-if="enableRotation" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
+                                                <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
+                                                    @input="updateItem(cat.id, item)" @keydown.enter.prevent="addNewLine(cat.id)">
+                                            </div>
+                                            <button class="icon-btn btn-del" @click="removeItem(cat.id, item.key, item.isLegacy)" tabindex="-1" title="刪除">🗑️</button>
+                                        </template>
                                     </div>
                                 </transition-group>
                             </div>
@@ -244,9 +263,22 @@
                                 <transition-group name="list">
                                     <div v-for="item in orphanedData" :key="item.key" class="input-row">
                                         <span class="row-bullet">●</span>
-                                        <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..." 
-                                            @input="updateItem('default', item)" @keydown.enter.prevent="addNewLine('default')">
-                                        <button class="icon-btn btn-del" @click="removeItem('default', item.key, item.isLegacy)" tabindex="-1">🗑️</button>
+                                        
+                                        <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup">
+                                            <div class="readonly-item">
+                                                <span class="author-tag">第 {{item.authorGroup}} 組</span>
+                                                <span>{{ item.text }}</span>
+                                            </div>
+                                        </template>
+                                        
+                                        <template v-else>
+                                            <div style="flex: 1; display: flex; align-items: center;">
+                                                <span v-if="enableRotation" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
+                                                <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..." 
+                                                    @input="updateItem('default', item)" @keydown.enter.prevent="addNewLine('default')">
+                                            </div>
+                                            <button class="icon-btn btn-del" @click="removeItem('default', item.key, item.isLegacy)" tabindex="-1">🗑️</button>
+                                        </template>
                                     </div>
                                 </transition-group>
                             </div>
@@ -261,9 +293,22 @@
                             <transition-group name="list">
                                 <div v-for="item in (groupData['default'] || [])" :key="item.key" class="input-row">
                                     <span class="row-bullet">●</span>
-                                    <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
-                                        @input="updateItem('default', item)" @keydown.enter.prevent="addNewLine('default')">
-                                    <button class="icon-btn btn-del" @click="removeItem('default', item.key, item.isLegacy)" tabindex="-1">🗑️</button>
+                                    
+                                    <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup">
+                                        <div class="readonly-item">
+                                            <span class="author-tag">第 {{item.authorGroup}} 組</span>
+                                            <span>{{ item.text }}</span>
+                                        </div>
+                                    </template>
+                                    
+                                    <template v-else>
+                                        <div style="flex: 1; display: flex; align-items: center;">
+                                            <span v-if="enableRotation" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
+                                            <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
+                                                @input="updateItem('default', item)" @keydown.enter.prevent="addNewLine('default')">
+                                        </div>
+                                        <button class="icon-btn btn-del" @click="removeItem('default', item.key, item.isLegacy)" tabindex="-1">🗑️</button>
+                                    </template>
                                 </div>
                             </transition-group>
                         </div>
@@ -302,7 +347,10 @@
                                             {{ block.title }}
                                         </div>
                                         <ul v-if="block.lines.length > 0">
-                                            <li v-for="(line, k) in block.lines" :key="k">{{ line }}</li>
+                                            <li v-for="(line, k) in block.lines" :key="k">
+                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                <span>{{ line.text }}</span>
+                                            </li>
                                         </ul>
                                         <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
                                     </div>
@@ -359,7 +407,7 @@
                                 <input type="checkbox" v-model="tempEnableRotation" style="width: 18px; height: 18px;">
                                 開啟「換組討論」功能 (世界咖啡館模式)
                             </label>
-                            <p style="font-size:0.85rem; color:#888; margin: 5px 0 0 26px;">開啟後，講師主畫面最下方會出現換組按鈕，可將各組討論內容依序往下傳遞。</p>
+                            <p style="font-size:0.85rem; color:#888; margin: 5px 0 0 26px;">開啟後，除了能輪轉討論外，還會自動標示每一句想法是由「哪一組」填寫的，且學生無法刪改他組的想法。</p>
                         </div>
                     </div>
 
@@ -472,7 +520,6 @@
                     allowUncategorized: true,
                     tempAllowUncategorized: true,
                     
-                    // --- 換組控制開關 ---
                     enableRotation: false,
                     tempEnableRotation: false,
 
@@ -688,23 +735,49 @@
                         if (this.roomCategories && this.roomCategories.length > 0) {
                             this.roomCategories.forEach(cat => {
                                 const catData = val[cat.id] || {};
-                                newGroupData[cat.id] = Object.keys(catData).map(k => ({key: k, text: catData[k]}));
+                                newGroupData[cat.id] = Object.keys(catData).map(k => {
+                                    let node = catData[k];
+                                    let text = typeof node === 'object' ? (node.text || '') : node;
+                                    let authorGroup = typeof node === 'object' ? node.authorGroup : null;
+                                    return {key: k, text: text, authorGroup: authorGroup};
+                                });
                             });
                             
                             const defaultData = val['default'] || {};
-                            newOrphanedData = Object.keys(defaultData).map(k => ({key: k, text: defaultData[k]}));
+                            newOrphanedData = Object.keys(defaultData).map(k => {
+                                let node = defaultData[k];
+                                let text = typeof node === 'object' ? (node.text || '') : node;
+                                let authorGroup = typeof node === 'object' ? node.authorGroup : null;
+                                return {key: k, text: text, authorGroup: authorGroup};
+                            });
+                            
                             Object.keys(val).forEach(k => {
-                                if (k !== 'default' && !this.roomCategories.find(c => c.id === k) && typeof val[k] === 'string') {
-                                    newOrphanedData.push({key: k, text: val[k], isLegacy: true});
+                                if (k !== 'default' && !this.roomCategories.find(c => c.id === k)) {
+                                    let node = val[k];
+                                    let text = typeof node === 'object' ? (node.text || '') : node;
+                                    let authorGroup = typeof node === 'object' ? node.authorGroup : null;
+                                    if (text.trim() !== '') {
+                                        newOrphanedData.push({key: k, text: text, authorGroup: authorGroup, isLegacy: true});
+                                    }
                                 }
                             });
                         } else {
                             const defaultData = val['default'] || {};
-                            let parsedDefault = Object.keys(defaultData).map(k => ({key: k, text: defaultData[k]}));
+                            let parsedDefault = Object.keys(defaultData).map(k => {
+                                let node = defaultData[k];
+                                let text = typeof node === 'object' ? (node.text || '') : node;
+                                let authorGroup = typeof node === 'object' ? node.authorGroup : null;
+                                return {key: k, text: text, authorGroup: authorGroup};
+                            });
 
                             Object.keys(val).forEach(k => {
-                                if (k !== 'default' && typeof val[k] === 'string') {
-                                    parsedDefault.push({key: k, text: val[k], isLegacy: true});
+                                if (k !== 'default') {
+                                    let node = val[k];
+                                    let text = typeof node === 'object' ? (node.text || '') : node;
+                                    let authorGroup = typeof node === 'object' ? node.authorGroup : null;
+                                    if (text.trim() !== '') {
+                                        parsedDefault.push({key: k, text: text, authorGroup: authorGroup, isLegacy: true});
+                                    }
                                 }
                             });
                             newGroupData['default'] = parsedDefault;
@@ -738,7 +811,11 @@
                 },
                 
                 addNewLine(catId) {
-                    db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${catId}`).push('').then(() => {
+                    // 新增時記錄組別 (改為物件格式)
+                    db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${catId}`).push({
+                        text: '',
+                        authorGroup: this.currentGroup
+                    }).then(() => {
                         this.saveStatus = '已新增';
                     });
                 },
@@ -748,9 +825,11 @@
                         ? `discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${item.key}` 
                         : `discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${catId}/${item.key}`;
 
-                    db.ref(refPath).set(item.text)
-                        .then(() => { this.saveStatus = '已同步'; })
-                        .catch(() => { this.saveStatus = '同步失敗'; });
+                    db.ref(refPath).set({
+                        text: item.text,
+                        authorGroup: item.authorGroup || this.currentGroup
+                    }).then(() => { this.saveStatus = '已同步'; })
+                      .catch(() => { this.saveStatus = '同步失敗'; });
                 },
                 removeItem(catId, key, isLegacy) {
                     const refPath = isLegacy 
@@ -787,16 +866,28 @@
                         this.roomCategories.forEach(cat => {
                             let lines = [];
                             if (data[cat.id]) {
-                                lines = Object.values(data[cat.id]).filter(l => l && l.trim() !== '');
+                                lines = Object.values(data[cat.id]).map(node => {
+                                    return typeof node === 'object' ? { text: node.text || '', authorGroup: node.authorGroup } : { text: node || '', authorGroup: null };
+                                }).filter(l => l.text.trim() !== '');
                             }
                             result.push({ title: cat.name, lines: lines });
                         });
                         
                         let orphanedLines = [];
-                        if (data['default']) orphanedLines.push(...Object.values(data['default']).filter(l => l && l.trim() !== ''));
+                        if (data['default']) {
+                            orphanedLines.push(...Object.values(data['default']).map(node => {
+                                return typeof node === 'object' ? { text: node.text || '', authorGroup: node.authorGroup } : { text: node || '', authorGroup: null };
+                            }).filter(l => l.text.trim() !== ''));
+                        }
+                        
                         Object.keys(data).forEach(k => {
-                            if (k !== 'default' && !this.roomCategories.find(c => c.id === k) && typeof data[k] === 'string' && data[k].trim() !== '') {
-                                orphanedLines.push(data[k]);
+                            if (k !== 'default' && !this.roomCategories.find(c => c.id === k)) {
+                                let node = data[k];
+                                let text = typeof node === 'object' ? (node.text || '') : node;
+                                let authorGroup = typeof node === 'object' ? node.authorGroup : null;
+                                if (text.trim() !== '') {
+                                    orphanedLines.push({ text: text, authorGroup: authorGroup });
+                                }
                             }
                         });
                         
@@ -807,13 +898,22 @@
                     } else {
                         let lines = [];
                         if (data['default']) {
-                            lines = Object.values(data['default']).filter(l => l && l.trim() !== '');
+                            lines = Object.values(data['default']).map(node => {
+                                return typeof node === 'object' ? { text: node.text || '', authorGroup: node.authorGroup } : { text: node || '', authorGroup: null };
+                            }).filter(l => l.text.trim() !== '');
                         }
+                        
                         Object.keys(data).forEach(k => {
-                            if (k !== 'default' && typeof data[k] === 'string' && data[k].trim() !== '') {
-                                lines.push(data[k]);
+                            if (k !== 'default') {
+                                let node = data[k];
+                                let text = typeof node === 'object' ? (node.text || '') : node;
+                                let authorGroup = typeof node === 'object' ? node.authorGroup : null;
+                                if (text.trim() !== '') {
+                                    lines.push({ text: text, authorGroup: authorGroup });
+                                }
                             }
                         });
+                        
                         if (lines.length > 0) {
                             result.push({ title: null, lines: lines });
                         }
