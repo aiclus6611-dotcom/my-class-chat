@@ -78,6 +78,9 @@
         .student-view { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .group-badge { background: #1976d2; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; display: inline-block; margin-bottom: 20px;}
         
+        /* 學生畫面 - 指定題目區塊設計 */
+        .group-topic-box { background: #eef2ff; border: 2px solid #c7d2fe; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; color: #3730a3; font-size: 1.1rem; font-weight: bold; }
+        
         /* 學生畫面 - 分點區塊設計 */
         .student-cat-box { background: #f9fbff; border: 1px solid #e3f2fd; border-radius: 8px; padding: 15px; margin-bottom: 20px; transition: 0.2s; }
         .student-cat-box:hover { box-shadow: 0 2px 8px rgba(25,118,210,0.1); }
@@ -114,6 +117,9 @@
         .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; }
         .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; display: flex; justify-content: space-between; align-items: center; font-size:1.2rem;}
         
+        /* 老師端顯示的專屬題目 */
+        .teacher-group-topic { background: #eef2ff; color: #3730a3; padding: 8px 10px; border-radius: 6px; font-size: 0.95rem; margin-bottom: 15px; border: 1px solid #c7d2fe; font-weight: bold; }
+
         /* 老師畫面的分點樣式 */
         .category-block { margin-bottom: 15px; }
         .cat-title { margin: 10px 0 5px 0; color: #d84315; font-size: 1.05rem; border-bottom: 1px dashed #ffe0b2; padding-bottom: 3px; font-weight:bold;}
@@ -215,6 +221,11 @@
 
                 <div v-if="!isTeacher && currentGroup" class="student-view">
                     <div class="group-badge">您現在是：第 {{ currentGroup }} 組</div>
+                    
+                    <div v-if="groupTopics && groupTopics[currentGroup]" class="group-topic-box">
+                        🎯 本組指定題目：{{ groupTopics[currentGroup] }}
+                    </div>
+
                     <div style="margin-bottom: 15px; color: #555;">小組成員可以同時打字，資料會即時同步到所有人的畫面上。</div>
 
                     <div v-if="roomCategories && roomCategories.length > 0">
@@ -278,6 +289,11 @@
                                     <button class="btn-copy-small" @click="copySpecificGroupLink(i)" title="複製此組專屬連結">🔗 專屬連結</button>
                                 </div>
                             </h3>
+                            
+                            <div v-if="groupTopics && groupTopics[i]" class="teacher-group-topic">
+                                🎯 題目：{{ groupTopics[i] }}
+                            </div>
+
                             <div class="group-content">
                                 <template v-if="hasData(i)">
                                     <div v-for="(block, bIndex) in getGroupCategoriesAndLines(i)" :key="bIndex" class="category-block">
@@ -297,7 +313,7 @@
 
                     <div class="teacher-controls">
                         <button class="btn btn-red" @click="resetAllData">🗑️ 清空所有組別討論內容</button>
-                        <button class="btn btn-blue" @click="openSettingsModal">⚙️ 系統設定 (組數 / 分點 / 密碼)</button>
+                        <button class="btn btn-blue" @click="openSettingsModal">⚙️ 系統設定 (組數 / 分點 / 題目 / 密碼)</button>
                     </div>
                 </div>
             </div>
@@ -333,6 +349,15 @@
                         <div v-for="i in tempGroupCount" :key="i" class="modal-input-group">
                             <label>第 {{i}} 組</label>
                             <input type="text" v-model="tempPasswords[i]" placeholder="設定密碼...">
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h4>4. 設定各組專屬題目 (留空即無指定題目)</h4>
+                        <p style="font-size:0.9rem; color:#666; margin-top:0;">若想讓不同組別討論不同主題，請在此輸入。例如：第一與第二組輸入相同題目A，第三與第四組輸入題目B。</p>
+                        <div v-for="i in tempGroupCount" :key="i" class="modal-input-group">
+                            <label>第 {{i}} 組</label>
+                            <input type="text" v-model="tempGroupTopics[i]" placeholder="輸入本組討論題目...">
                         </div>
                     </div>
 
@@ -401,6 +426,10 @@
                     orphanedData: [], 
                     roomCategories: [], 
                     tempCategories: [], 
+                    
+                    // --- 新增：各組專屬題目 ---
+                    groupTopics: {},
+                    tempGroupTopics: {},
 
                     saveStatus: '',
                     allGroupsData: {},
@@ -454,6 +483,7 @@
                         this.savedPasswords = settings.passwords || {};
                         this.groupCount = settings.groupCount || 6;
                         this.roomCategories = settings.categories || []; 
+                        this.groupTopics = settings.groupTopics || {}; // 讀取各組題目
                         this.isLoading = false;
                         
                         if (this.pendingAutoGroup) {
@@ -499,7 +529,7 @@
                         
                         // 抓取舊房間的設定檔並套用至新房間
                         db.ref(`discussion_rooms/${room.id}/settings`).once('value', (snap) => {
-                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [] };
+                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [], groupTopics: {} };
                             db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set(oldSettings)
                                 .then(() => alert('✅ 討論區與其設定複製成功！(舊討論內容未複製)'))
                                 .catch(err => alert('❌ 複製失敗：' + err.message));
@@ -511,7 +541,7 @@
                     if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
                     newRoomRef.set({ name: this.newRoomName.trim(), createdAt: Date.now() });
-                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [] });
+                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {} });
                     this.newRoomName = '';
                     alert('✅ 討論區建立成功！');
                 },
@@ -728,6 +758,7 @@
                     this.tempGroupCount = this.groupCount;
                     // 深拷貝一份目前的分類，供 Modal 編輯
                     this.tempCategories = JSON.parse(JSON.stringify(this.roomCategories || []));
+                    this.tempGroupTopics = { ...this.groupTopics }; // 載入題目設定
                     this.showTeacherModal = true;
                 },
                 addTempCategory() {
@@ -746,7 +777,8 @@
                     db.ref(`discussion_rooms/${this.roomId}/settings`).update({
                         passwords: this.tempPasswords,
                         groupCount: this.tempGroupCount,
-                        categories: validCategories
+                        categories: validCategories,
+                        groupTopics: this.tempGroupTopics // 儲存題目設定
                     }).then(() => {
                         this.showTeacherModal = false;
                         alert('⚙️ 討論區系統設定已更新！');
