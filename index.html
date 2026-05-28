@@ -51,13 +51,14 @@
         h1 { text-align: center; color: #333; margin-bottom: 10px; }
         .room-title { text-align: center; color: #1976d2; font-size: 1.2rem; margin-bottom: 30px; font-weight: bold; }
         
-        .btn { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1rem; margin: 5px; transition: 0.2s; text-decoration: none; display: inline-block; text-align: center; }
+        .btn { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1rem; margin: 5px; transition: 0.2s; text-decoration: none; display: inline-block; text-align: center; font-weight: bold;}
         .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary { background: #1976d2; color: white; }
         .btn-red { background: #ff5252; color: white; }
         .btn-blue { background: #1976d2; color: white; }
         .btn-green { background: #4caf50; color: white; }
+        .btn-purple { background: #8b5cf6; color: white; }
         .btn-gray { background: #e0e0e0; color: #333; }
         .btn-gray:hover:not(:disabled) { background: #ccc; }
         
@@ -75,6 +76,19 @@
         
         .group-topic-box { background: #eef2ff; border: 2px solid #c7d2fe; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; color: #3730a3; font-size: 1.1rem; font-weight: bold; }
         
+        /* 學員畫面上方標頭固定 (Sticky) */
+        .sticky-top-box {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 50;
+            padding: 20px 20px 15px 20px;
+            margin: -20px -20px 20px -20px;
+            border-bottom: 2px solid #e2e8f0;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 10px -8px rgba(0,0,0,0.3);
+        }
+
         .student-cat-box { background: #f9fbff; border: 1px solid #e3f2fd; border-radius: 8px; padding: 15px; margin-bottom: 20px; transition: 0.2s; }
         .student-cat-box:hover { box-shadow: 0 2px 8px rgba(25,118,210,0.1); }
         .student-cat-title { font-size: 1.15rem; font-weight: bold; color: #1976d2; margin-bottom: 12px; border-left: 4px solid #1976d2; padding-left: 10px; }
@@ -109,10 +123,9 @@
         .author-tag-teacher { font-size: 0.75rem; background: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-weight: bold; white-space: nowrap; margin-right: 6px; border: 1px solid #c7d2fe; display: inline-block; vertical-align: text-bottom;}
 
         /* --- 老師畫面 --- */
-        .teacher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .teacher-grid.layout-2cols { grid-template-columns: repeat(2, 1fr); }
+        .teacher-grid { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 20px; transition: 0.3s; }
         @media (max-width: 1024px) { .teacher-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 768px) { .teacher-grid, .teacher-grid.layout-2cols { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .teacher-grid { grid-template-columns: 1fr; } }
         
         .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; display:flex; flex-direction: column;}
         .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; font-size:1.2rem; }
@@ -143,11 +156,140 @@
         .modal-actions { text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
 
         .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(248, 250, 252, 0.9); display: flex; justify-content: center; align-items: center; z-index: 999; font-size: 1.5rem; color: #475569; font-weight: bold;}
+
+        /* === 全螢幕投影模式專屬樣式 === */
+        .projection-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: #f1f5f9; z-index: 9999;
+            display: flex; flex-direction: column; overflow: hidden; /* 防止整個螢幕往下滾 */
+            box-sizing: border-box;
+        }
+        .projection-header {
+            background: #1e293b; color: white; padding: 15px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        
+        /* 隱藏/顯示投影控制列的懸浮按鈕 */
+        .projection-floating-btn {
+            position: absolute; top: 15px; right: 20px; background: rgba(30, 41, 59, 0.9);
+            color: white; padding: 10px 20px; border-radius: 8px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s; border: 1px solid #475569;
+        }
+        .projection-floating-btn:hover { background: #0f172a; }
+
+        .projection-body {
+            flex: 1; padding: 20px; overflow: hidden; display: flex; flex-direction: column;
+            box-sizing: border-box;
+            min-height: 0; /* Flexbox 防止撐破外框的重要設定 */
+        }
+        .projection-grid {
+            flex: 1; display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); gap: 20px;
+            min-height: 0; /* Grid 防止撐破外框的重要設定 */
+            box-sizing: border-box;
+        }
+        .projection-card {
+            background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column; border: 2px solid #cbd5e1; 
+            height: 100%; min-height: 0; /* 強制外框鎖定在螢幕視角內 */
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .projection-card-header {
+            background: #f8fafc; padding: 15px; border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0; border-radius: 10px 10px 0 0;
+            box-sizing: border-box;
+        }
+        .projection-card-content {
+            padding: 15px; flex: 1; 
+            overflow: hidden !important; /* 絕對鎖死，不允許滾動條出現 */ 
+            position: relative;
+            min-height: 0; /* Flexbox 防止撐破外框的重要設定 */
+            box-sizing: border-box;
+        }
+        .projection-inner {
+            width: 100%; 
+            /* 取消 transition 動畫，避免計算高度時抓到錯誤的中間值 */
+        }
+
+        /* 標籤接力式排版 (不用原來的ul li) */
+        .proj-category-block { margin-bottom: 12px; }
+        .proj-inline-container { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+        .proj-inline-item { 
+            background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; 
+            display: inline-flex; align-items: center; line-height: 1.3; font-size: 0.95em; color: #334155; 
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div v-if="isLoading" class="loading-mask">資料讀取中...</div>
+
+        <!-- 講師投影專用全螢幕畫面 -->
+        <div v-if="showProjection" class="projection-overlay">
+            
+            <!-- 懸浮呼叫鈕 (當頂部被隱藏時顯示) -->
+            <div class="projection-floating-btn" v-if="!showProjectionHeader" @click="showProjectionHeader = true">
+                ⚙️ 顯示控制列
+            </div>
+
+            <!-- 可隱藏的頂部控制列 -->
+            <div class="projection-header" v-if="showProjectionHeader">
+                <h2 style="margin:0; font-size: 1.5rem;">📺 學員討論投影畫面：{{ currentRoomName }}</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-gray" style="margin:0;" @click="showProjectionHeader = false">⬆ 隱藏控制列</button>
+                    <button class="btn btn-red" style="margin:0;" @click="showProjection = false">✖ 關閉投影模式</button>
+                </div>
+            </div>
+
+            <div class="projection-body">
+                <div class="projection-grid" :style="{ '--cols': columnsPerRow }">
+                    <div v-for="i in groupCount" :key="i" class="projection-card">
+                        <!-- 標題區域 (永遠固定在卡片上方，不會被擠掉) -->
+                        <div class="projection-card-header">
+                            <h3 style="margin:0 0 10px 0; color: #1976d2; font-size:1.2rem; display:flex; justify-content:space-between;">
+                                <span v-if="enableRotation && rotationMode === 'student'">第 {{ i }} 組學員位置</span>
+                                <span v-else>第 {{ i }} 組主題板</span>
+                            </h3>
+                            <div v-if="currentRound > 0" style="background:#fef3c7; color:#d97706; padding:4px 8px; border-radius:4px; font-size:0.95rem; border:1px solid #fde68a; margin-bottom:8px;">
+                                <template v-if="rotationMode === 'student'">
+                                    📝 正在討論 <strong>第 {{ getDisplayBoardId(i) }} 組</strong>
+                                </template>
+                                <template v-else>
+                                    📝 <strong>第 {{ getDisplayWriterId(i) }} 組</strong> 填寫中
+                                </template>
+                            </div>
+                            <div v-if="groupTopics && groupTopics[getDisplayBoardId(i)]" class="teacher-group-topic" style="margin-bottom:0;">
+                                🎯 題目：{{ groupTopics[getDisplayBoardId(i)] }}
+                            </div>
+                        </div>
+                        
+                        <!-- 內容區域 (無滾動條，自動縮放字體) -->
+                        <div class="projection-card-content" :ref="'projWrapper_' + i">
+                            <div class="projection-inner" :ref="'projInner_' + i">
+                                <template v-if="hasData(getDisplayBoardId(i))">
+                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="proj-category-block">
+                                        <div v-if="block.title" class="cat-title" style="margin-bottom: 8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                            {{ block.title }}
+                                        </div>
+                                        <!-- 改用 inline tag 排版，取代原本的ul li -->
+                                        <div v-if="block.lines.length > 0" class="proj-inline-container">
+                                            <span class="proj-inline-item" v-for="(line, k) in block.lines" :key="k">
+                                                {{ line.text }}
+                                            </span>
+                                        </div>
+                                        <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
+                                    </div>
+                                </template>
+                                <p v-else class="empty-text">尚無內容...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div v-if="currentView === 'lobby' && !lobbyAuthenticated" class="login-container">
             <div class="login-box">
@@ -213,18 +355,20 @@
                 </div>
 
                 <div v-if="!isTeacher && currentGroup" class="student-view">
-                    <div style="display:flex; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
-                        <div class="group-badge" style="margin-bottom:0;">您現在是：第 {{ currentGroup }} 組</div>
-                        <div v-if="currentRound > 0" class="group-badge" style="background: #d97706; margin-bottom:0; margin-left:10px;">
-                            🔄 接力完成 第 {{ virtualGroup }} 組 的海報
-                        </div>
-                    </div>
                     
-                    <div v-if="groupTopics && groupTopics[virtualGroup]" class="group-topic-box">
-                        🎯 目前指定題目：{{ groupTopics[virtualGroup] }}
+                    <div class="sticky-top-box">
+                        <div style="display:flex; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+                            <div class="group-badge" style="margin-bottom:0;">您現在是：第 {{ currentGroup }} 組</div>
+                            <div v-if="currentRound > 0" class="group-badge" style="background: #d97706; margin-bottom:0; margin-left:10px;">
+                                🔄 接力完成 第 {{ virtualGroup }} 組 的海報
+                            </div>
+                        </div>
+                        
+                        <div v-if="groupTopics && groupTopics[virtualGroup]" class="group-topic-box" style="margin-bottom:0;">
+                            🎯 目前指定題目：{{ groupTopics[virtualGroup] }}
+                        </div>
+                        <div v-else style="color: #555; font-size: 0.95rem;">小組成員可以同時打字，資料會即時同步到所有人的畫面上。</div>
                     </div>
-
-                    <div style="margin-bottom: 15px; color: #555;">小組成員可以同時打字，資料會即時同步到所有人的畫面上。</div>
 
                     <div v-if="roomCategories && roomCategories.length > 0">
                         <div v-for="cat in roomCategories" :key="cat.id" class="student-cat-box">
@@ -321,28 +465,35 @@
                 </div>
 
                 <div v-if="isTeacher">
-                    <div class="teacher-grid" :class="{ 'layout-2cols': groupCount === 4 }">
+                    <div class="teacher-grid" :style="{ '--cols': columnsPerRow }">
                         <div v-for="i in groupCount" :key="i" class="group-card">
                             <h3 style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
                                 <div class="card-header-flex">
-                                    <span>第 {{ i }} 組主題板</span>
+                                    <span v-if="enableRotation && rotationMode === 'student'">第 {{ i }} 組學員位置</span>
+                                    <span v-else>第 {{ i }} 組主題板</span>
+                                    
                                     <div>
                                         <span v-if="savedPasswords[i]" title="密碼保護" style="font-size:1rem; margin-right:5px;">🔒</span>
                                         <button class="btn-copy-small" @click="copySpecificGroupLink(i)">🔗 連結</button>
                                     </div>
                                 </div>
                                 <div v-if="currentRound > 0" style="background:#fef3c7; color:#d97706; padding:4px 8px; border-radius:4px; font-size:0.95rem; border:1px solid #fde68a; font-weight:normal; width:calc(100% - 18px); box-sizing: border-box;">
-                                    📝 目前由 <strong>第 {{ getWriterGroup(i) }} 組</strong> 填寫中
+                                    <template v-if="rotationMode === 'student'">
+                                        📝 目前正在討論 <strong>第 {{ getDisplayBoardId(i) }} 組</strong> 的主題板
+                                    </template>
+                                    <template v-else>
+                                        📝 目前由 <strong>第 {{ getDisplayWriterId(i) }} 組</strong> 填寫中
+                                    </template>
                                 </div>
                             </h3>
                             
-                            <div v-if="groupTopics && groupTopics[i]" class="teacher-group-topic" :style="currentRound > 0 ? 'margin-top:0;' : ''">
-                                🎯 題目：{{ groupTopics[i] }}
+                            <div v-if="groupTopics && groupTopics[getDisplayBoardId(i)]" class="teacher-group-topic" :style="currentRound > 0 ? 'margin-top:0;' : ''">
+                                🎯 題目：{{ groupTopics[getDisplayBoardId(i)] }}
                             </div>
 
                             <div class="group-content">
-                                <template v-if="hasData(i)">
-                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(i)" :key="bIndex" class="category-block">
+                                <template v-if="hasData(getDisplayBoardId(i))">
+                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="category-block">
                                         <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
                                             {{ block.title }}
                                         </div>
@@ -375,10 +526,32 @@
                                     ↩️ 換組歸零 (原班人馬)
                                 </button>
                             </div>
-                            <p style="font-size: 0.95rem; color: #92400e; margin: 15px 0 0 0; text-align: center;">
+                            <p style="font-size: 0.95rem; color: #92400e; margin: 15px 0 15px 0; text-align: center;">
                                 <span v-if="currentRound >= groupCount - 1 && groupCount > 1">⚠️ 已經達到最大換組次數，每一組都討論過所有主題了！</span>
-                                <span v-else>按下按鈕後，學員畫面會自動切換為下一組的內容，接力補充！(您的總覽畫面位置不會變動，方便檢視)</span>
+                                <span v-else>按下按鈕後，學員畫面會自動切換為下一組的內容，接力補充！</span>
                             </p>
+
+                            <div style="text-align: center;">
+                                <div style="display: inline-block; background: #fff; padding: 10px 20px; border-radius: 8px; border: 1px solid #fcd34d; text-align: left;">
+                                    <span style="font-weight: bold; color: #b45309; margin-right: 15px;">👀 總覽畫面視角切換：</span>
+                                    <label style="margin-right: 20px; cursor: pointer; color: #78350f;">
+                                        <input type="radio" v-model="rotationMode" value="teacher" @change="quickSaveRotationMode"> 
+                                        📍 講師視角 (區塊固定為「主題板」)
+                                    </label>
+                                    <label style="cursor: pointer; color: #78350f;">
+                                        <input type="radio" v-model="rotationMode" value="student" @change="quickSaveRotationMode"> 
+                                        🧑‍🎓 學員視角 (區塊固定為「學員位置」)
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- 投影模式按鈕 -->
+                        <div class="teacher-controls" style="margin-bottom: 20px;">
+                            <button class="btn btn-purple" style="font-size:1.15rem; padding: 15px 30px;" @click="showProjection = true">
+                                📺 顯示學員討論畫面 (全螢幕投影模式)
+                            </button>
                         </div>
 
                         <div class="teacher-controls">
@@ -394,12 +567,23 @@
                     <div class="modal-title">⚙️ 系統設定 (此討論區專屬)</div>
                     
                     <div class="modal-section">
-                        <h4>1. 設定總組數 (1~10)</h4>
-                        <div class="modal-input-group">
-                            <label>組數：</label>
-                            <select v-model.number="tempGroupCount">
-                                <option v-for="n in 10" :value="n">{{ n }} 組</option>
-                            </select>
+                        <h4>1. 設定總組數 (1~10) 與 排版</h4>
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div class="modal-input-group" style="flex: 1; margin-bottom: 0;">
+                                <label style="width: 60px;">組數：</label>
+                                <select v-model.number="tempGroupCount">
+                                    <option v-for="n in 10" :value="n">{{ n }} 組</option>
+                                </select>
+                            </div>
+                            <div class="modal-input-group" style="flex: 1; margin-bottom: 0;">
+                                <label style="width: 120px;">每列顯示組數：</label>
+                                <select v-model.number="tempColumnsPerRow">
+                                    <option value="2">2 組 / 列</option>
+                                    <option value="3">3 組 / 列</option>
+                                    <option value="4">4 組 / 列</option>
+                                    <option value="5">5 組 / 列</option>
+                                </select>
+                            </div>
                         </div>
                         
                         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
@@ -408,6 +592,18 @@
                                 開啟「換組討論」功能 (世界咖啡館模式)
                             </label>
                             <p style="font-size:0.85rem; color:#888; margin: 5px 0 0 26px;">開啟後，除了能輪轉討論外，還會自動標示每一句想法是由「哪一組」填寫的，且學生無法刪改他組的想法。</p>
+                            
+                            <div v-if="tempEnableRotation" style="margin: 15px 0 0 26px; padding: 10px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <div style="font-weight: bold; color: #334155; margin-bottom: 8px;">總覽預設顯示視角：</div>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin-bottom: 5px; font-size: 0.95rem; color: #475569;">
+                                    <input type="radio" v-model="tempRotationMode" value="teacher">
+                                    📍 講師視角 (排版固定為第1~N組的主題板)
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.95rem; color: #475569;">
+                                    <input type="radio" v-model="tempRotationMode" value="student">
+                                    🧑‍🎓 學員視角 (排版固定為第1~N組學員，主題跟著換)
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -522,6 +718,15 @@
                     
                     enableRotation: false,
                     tempEnableRotation: false,
+                    
+                    rotationMode: 'teacher',
+                    tempRotationMode: 'teacher',
+
+                    columnsPerRow: 3,
+                    tempColumnsPerRow: 3,
+
+                    showProjection: false,
+                    showProjectionHeader: false, // 預設隱藏頭部工具列
 
                     saveStatus: '',
                     allGroupsData: {},
@@ -541,6 +746,24 @@
             computed: {
                 hasPasswords() {
                     return Object.values(this.savedPasswords).some(p => p && p.trim() !== '');
+                }
+            },
+            watch: {
+                // 當開啟投影或資料發生變化時，自動觸發「縮放字體功能」
+                showProjection(newVal) {
+                    if(newVal) {
+                        this.adjustProjectionScale();
+                    } else {
+                        this.showProjectionHeader = false; // 關閉時復原隱藏狀態
+                    }
+                },
+                allGroupsData: {
+                    deep: true,
+                    handler() {
+                        if (this.showProjection) {
+                            this.adjustProjectionScale();
+                        }
+                    }
                 }
             },
             mounted() {
@@ -578,7 +801,9 @@
                         this.groupTopics = settings.groupTopics || {}; 
                         this.allowUncategorized = settings.allowUncategorized !== false; 
                         this.enableRotation = settings.enableRotation === true; 
-                        
+                        this.rotationMode = settings.rotationMode || 'teacher';
+                        this.columnsPerRow = settings.columnsPerRow || 3;
+
                         const newRound = settings.currentRound || 0;
                         const roundChanged = this.currentRound !== newRound;
                         this.currentRound = newRound;
@@ -598,9 +823,51 @@
                     if (this.isTeacher) {
                         this.listenToAllData();
                     }
+                    
+                    // 視窗改變大小時，重新計算字體縮放
+                    window.addEventListener('resize', () => {
+                        if(this.showProjection) this.adjustProjectionScale();
+                    });
                 }
             },
             methods: {
+                // 自動縮放字體的核心邏輯
+                adjustProjectionScale() {
+                    if (!this.showProjection) return;
+                    this.$nextTick(() => {
+                        // 給予稍微充裕的渲染時間 100ms 確保 DOM 更新
+                        setTimeout(() => {
+                            for (let i = 1; i <= this.groupCount; i++) {
+                                // 修正陣列抓取問題：Vue 3 中若 ref 不在 v-for 內可能直接回傳 DOM 元素
+                                let wrapper = this.$refs['projWrapper_' + i];
+                                let inner = this.$refs['projInner_' + i];
+                                
+                                if (Array.isArray(wrapper)) wrapper = wrapper[0];
+                                if (Array.isArray(inner)) inner = inner[0];
+
+                                if (wrapper && inner && wrapper.clientHeight > 0) {
+                                    // 每次計算前先還原為預設最大字體
+                                    inner.style.fontSize = '1.1rem';
+                                    
+                                    // 強制瀏覽器重新計算 Layout
+                                    void inner.offsetHeight;
+
+                                    let currentSize = 1.1;
+                                    let safetyCounter = 0; // 防呆機制
+                                    
+                                    // 關鍵判斷：當內部實際高度大於外框限制高度時，縮小字體 (最低限制0.4rem)
+                                    while (inner.scrollHeight > wrapper.clientHeight && currentSize > 0.4 && safetyCounter < 100) {
+                                        currentSize -= 0.05;
+                                        inner.style.fontSize = currentSize + 'rem';
+                                        void inner.offsetHeight; // 強制重繪以取得最新 scrollHeight
+                                        safetyCounter++;
+                                    }
+                                }
+                            }
+                        }, 100); 
+                    });
+                },
+
                 verifyLobbyPassword() {
                     if (this.lobbyPasswordInput === '20150117') {
                         this.lobbyAuthenticated = true;
@@ -626,7 +893,7 @@
                         newRoomRef.set({ name: newName.trim(), createdAt: Date.now() });
                         
                         db.ref(`discussion_rooms/${room.id}/settings`).once('value', (snap) => {
-                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, enableRotation: false };
+                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, enableRotation: false, columnsPerRow: 3 };
                             oldSettings.currentRound = 0; 
                             db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set(oldSettings)
                                 .then(() => alert('✅ 討論區與其設定複製成功！(舊討論內容未複製)'))
@@ -639,7 +906,7 @@
                     if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
                     newRoomRef.set({ name: this.newRoomName.trim(), createdAt: Date.now() });
-                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false });
+                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false, rotationMode: 'teacher', columnsPerRow: 3 });
                     this.newRoomName = '';
                     alert('✅ 討論區建立成功！');
                 },
@@ -811,7 +1078,6 @@
                 },
                 
                 addNewLine(catId) {
-                    // 新增時記錄組別 (改為物件格式)
                     db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${catId}`).push({
                         text: '',
                         authorGroup: this.currentGroup
@@ -848,8 +1114,26 @@
                         db.ref(`discussion_rooms/${this.roomId}/settings/currentRound`).set(0);
                     }
                 },
-                getWriterGroup(i) {
-                    return (i + this.currentRound - 1) % this.groupCount + 1;
+                
+                getDisplayBoardId(slotIndex) {
+                    if (!this.enableRotation || this.rotationMode === 'teacher') {
+                        return slotIndex;
+                    } else {
+                        return (slotIndex - this.currentRound - 1 + this.groupCount) % this.groupCount + 1;
+                    }
+                },
+                getDisplayWriterId(slotIndex) {
+                    if (!this.enableRotation || this.rotationMode === 'teacher') {
+                        return (slotIndex + this.currentRound - 1) % this.groupCount + 1;
+                    } else {
+                        return slotIndex;
+                    }
+                },
+                
+                quickSaveRotationMode() {
+                    if (this.roomId) {
+                        db.ref(`discussion_rooms/${this.roomId}/settings/rotationMode`).set(this.rotationMode);
+                    }
                 },
 
                 listenToAllData() {
@@ -857,8 +1141,8 @@
                         this.allGroupsData = snapshot.val() || {};
                     });
                 },
-                getGroupCategoriesAndLines(groupIndex) {
-                    const data = this.allGroupsData['group_' + groupIndex];
+                getGroupCategoriesAndLines(boardIndex) {
+                    const data = this.allGroupsData['group_' + boardIndex];
                     if (!data) return []; 
 
                     let result = [];
@@ -920,8 +1204,8 @@
                     }
                     return result;
                 },
-                hasData(groupIndex) {
-                    const blocks = this.getGroupCategoriesAndLines(groupIndex);
+                hasData(boardIndex) {
+                    const blocks = this.getGroupCategoriesAndLines(boardIndex);
                     return blocks.some(b => b.lines.length > 0);
                 },
                 resetAllData() {
@@ -938,6 +1222,8 @@
                     this.tempGroupTopics = { ...this.groupTopics };
                     this.tempAllowUncategorized = this.allowUncategorized; 
                     this.tempEnableRotation = this.enableRotation; 
+                    this.tempRotationMode = this.rotationMode; 
+                    this.tempColumnsPerRow = this.columnsPerRow;
                     
                     this.showTeacherModal = true;
                 },
@@ -965,6 +1251,8 @@
                         groupTopics: this.tempGroupTopics,
                         allowUncategorized: this.tempAllowUncategorized,
                         enableRotation: this.tempEnableRotation, 
+                        rotationMode: this.tempRotationMode,
+                        columnsPerRow: this.tempColumnsPerRow,
                         currentRound: newRound
                     }).then(() => {
                         this.showTeacherModal = false;
