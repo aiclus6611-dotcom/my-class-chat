@@ -227,15 +227,12 @@
     <div id="app">
         <div v-if="isLoading" class="loading-mask">資料讀取中...</div>
 
-        <!-- 講師投影專用全螢幕畫面 -->
         <div v-if="showProjection" class="projection-overlay">
             
-            <!-- 懸浮呼叫鈕 (當頂部被隱藏時顯示) -->
             <div class="projection-floating-btn" v-if="!showProjectionHeader" @click="showProjectionHeader = true">
                 ⚙️ 顯示控制列
             </div>
 
-            <!-- 可隱藏的頂部控制列 -->
             <div class="projection-header" v-if="showProjectionHeader">
                 <h2 style="margin:0; font-size: 1.5rem;">📺 學員討論投影畫面：{{ currentRoomName }}</h2>
                 <div style="display: flex; gap: 10px;">
@@ -247,7 +244,6 @@
             <div class="projection-body">
                 <div class="projection-grid" :style="{ '--cols': columnsPerRow }">
                     <div v-for="i in groupCount" :key="i" class="projection-card">
-                        <!-- 標題區域 (永遠固定在卡片上方，不會被擠掉) -->
                         <div class="projection-card-header">
                             <h3 style="margin:0 0 10px 0; color: #1976d2; font-size:1.2rem; display:flex; justify-content:space-between;">
                                 <span v-if="enableRotation && rotationMode === 'student'">第 {{ i }} 組學員位置</span>
@@ -266,7 +262,6 @@
                             </div>
                         </div>
                         
-                        <!-- 內容區域 (無滾動條，自動縮放字體) -->
                         <div class="projection-card-content" :ref="'projWrapper_' + i">
                             <div class="projection-inner" :ref="'projInner_' + i">
                                 <template v-if="hasData(getDisplayBoardId(i))">
@@ -274,7 +269,6 @@
                                         <div v-if="block.title" class="cat-title" style="margin-bottom: 8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
                                             {{ block.title }}
                                         </div>
-                                        <!-- 改用 inline tag 排版，取代原本的ul li -->
                                         <div v-if="block.lines.length > 0" class="proj-inline-container">
                                             <span class="proj-inline-item" v-for="(line, k) in block.lines" :key="k">
                                                 {{ line.text }}
@@ -371,7 +365,7 @@
                     </div>
 
                     <div v-if="roomCategories && roomCategories.length > 0">
-                        <div v-for="cat in roomCategories" :key="cat.id" class="student-cat-box">
+                        <div v-for="cat in visibleRoomCategories" :key="cat.id" class="student-cat-box">
                             <div class="student-cat-title">{{ cat.name }}</div>
                             <div class="dynamic-input-list">
                                 <transition-group name="list">
@@ -465,6 +459,30 @@
                 </div>
 
                 <div v-if="isTeacher">
+                    
+                    <div v-if="sequentialDisplayEnabled && roomCategories && roomCategories.length > 0" style="box-sizing: border-box; width: 100%; margin-bottom: 20px; background: #e0f2f1; padding: 20px; border-radius: 8px; border: 2px solid #80cbc4;">
+                        <h4 style="margin:0 0 15px 0; color:#00695c; text-align:center; font-size:1.2rem;">
+                            👁️ 手動逐項顯示分點控制
+                        </h4>
+                        <div style="font-size: 1.1rem; margin-bottom: 15px; color: #004d40; text-align: center;">
+                            當前學員畫面開放進度：<strong>{{ currentVisibleCategoryCount }} / {{ roomCategories.length }}</strong> 個分點
+                            <span v-if="currentVisibleCategoryCount < roomCategories.length"> (下一個即將開放：{{ roomCategories[currentVisibleCategoryCount].name }})</span>
+                            <span v-else> (已全部開放)</span>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap: wrap;">
+                            <button class="btn btn-gray" @click="changeVisibleCategoryCount(-1)" :disabled="currentVisibleCategoryCount <= 1">
+                                ⬅️ 退回隱藏最新分點
+                            </button>
+                            <button class="btn" style="background:#00897b; color:white; font-size:1.1rem; padding: 12px 24px;" 
+                                @click="changeVisibleCategoryCount(1)" :disabled="currentVisibleCategoryCount >= roomCategories.length">
+                                ➡️ 顯示下一個分點
+                            </button>
+                            <button class="btn btn-gray" @click="showAllCategories" :disabled="currentVisibleCategoryCount >= roomCategories.length">
+                                ⏭️ 顯示全部分點
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="teacher-grid" :style="{ '--cols': columnsPerRow }">
                         <div v-for="i in groupCount" :key="i" class="group-card">
                             <h3 style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
@@ -547,7 +565,6 @@
 
                         </div>
 
-                        <!-- 投影模式按鈕 -->
                         <div class="teacher-controls" style="margin-bottom: 20px;">
                             <button class="btn btn-purple" style="font-size:1.15rem; padding: 15px 30px;" @click="showProjection = true">
                                 📺 顯示學員討論畫面 (全螢幕投影模式)
@@ -625,6 +642,11 @@
                                 <input type="checkbox" v-model="tempAllowUncategorized" style="width: 18px; height: 18px;">
                                 允許學員填寫額外的「未分類論點」
                             </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; color: #1976d2; margin-top: 10px;">
+                                <input type="checkbox" v-model="tempSequentialDisplayEnabled" style="width: 18px; height: 18px;">
+                                開啟「講師手動逐項顯示」功能
+                            </label>
+                            <p style="font-size:0.85rem; color:#888; margin: 5px 0 0 26px;">開啟後，學員初始只會看見第一個分點。講師需在總覽面板手動點擊按鈕，依序開放後續的分點。</p>
                         </div>
 
                         <div v-for="(cat, index) in tempCategories" :key="cat.id" class="modal-input-group">
@@ -715,6 +737,10 @@
 
                     allowUncategorized: true,
                     tempAllowUncategorized: true,
+
+                    sequentialDisplayEnabled: false,
+                    tempSequentialDisplayEnabled: false,
+                    currentVisibleCategoryCount: 1,
                     
                     enableRotation: false,
                     tempEnableRotation: false,
@@ -726,7 +752,7 @@
                     tempColumnsPerRow: 3,
 
                     showProjection: false,
-                    showProjectionHeader: false, // 預設隱藏頭部工具列
+                    showProjectionHeader: false, 
 
                     saveStatus: '',
                     allGroupsData: {},
@@ -746,15 +772,22 @@
             computed: {
                 hasPasswords() {
                     return Object.values(this.savedPasswords).some(p => p && p.trim() !== '');
+                },
+                visibleRoomCategories() {
+                    if (!this.roomCategories) return [];
+                    if (this.sequentialDisplayEnabled) {
+                        let count = Math.max(1, Math.min(this.currentVisibleCategoryCount, this.roomCategories.length));
+                        return this.roomCategories.slice(0, count);
+                    }
+                    return this.roomCategories;
                 }
             },
             watch: {
-                // 當開啟投影或資料發生變化時，自動觸發「縮放字體功能」
                 showProjection(newVal) {
                     if(newVal) {
                         this.adjustProjectionScale();
                     } else {
-                        this.showProjectionHeader = false; // 關閉時復原隱藏狀態
+                        this.showProjectionHeader = false; 
                     }
                 },
                 allGroupsData: {
@@ -803,6 +836,9 @@
                         this.enableRotation = settings.enableRotation === true; 
                         this.rotationMode = settings.rotationMode || 'teacher';
                         this.columnsPerRow = settings.columnsPerRow || 3;
+                        
+                        this.sequentialDisplayEnabled = settings.sequentialDisplayEnabled === true;
+                        this.currentVisibleCategoryCount = settings.currentVisibleCategoryCount || 1;
 
                         const newRound = settings.currentRound || 0;
                         const roundChanged = this.currentRound !== newRound;
@@ -824,21 +860,17 @@
                         this.listenToAllData();
                     }
                     
-                    // 視窗改變大小時，重新計算字體縮放
                     window.addEventListener('resize', () => {
                         if(this.showProjection) this.adjustProjectionScale();
                     });
                 }
             },
             methods: {
-                // 自動縮放字體的核心邏輯
                 adjustProjectionScale() {
                     if (!this.showProjection) return;
                     this.$nextTick(() => {
-                        // 給予稍微充裕的渲染時間 100ms 確保 DOM 更新
                         setTimeout(() => {
                             for (let i = 1; i <= this.groupCount; i++) {
-                                // 修正陣列抓取問題：Vue 3 中若 ref 不在 v-for 內可能直接回傳 DOM 元素
                                 let wrapper = this.$refs['projWrapper_' + i];
                                 let inner = this.$refs['projInner_' + i];
                                 
@@ -846,20 +878,16 @@
                                 if (Array.isArray(inner)) inner = inner[0];
 
                                 if (wrapper && inner && wrapper.clientHeight > 0) {
-                                    // 每次計算前先還原為預設最大字體
                                     inner.style.fontSize = '1.1rem';
-                                    
-                                    // 強制瀏覽器重新計算 Layout
                                     void inner.offsetHeight;
 
                                     let currentSize = 1.1;
-                                    let safetyCounter = 0; // 防呆機制
+                                    let safetyCounter = 0; 
                                     
-                                    // 關鍵判斷：當內部實際高度大於外框限制高度時，縮小字體 (最低限制0.4rem)
                                     while (inner.scrollHeight > wrapper.clientHeight && currentSize > 0.4 && safetyCounter < 100) {
                                         currentSize -= 0.05;
                                         inner.style.fontSize = currentSize + 'rem';
-                                        void inner.offsetHeight; // 強制重繪以取得最新 scrollHeight
+                                        void inner.offsetHeight; 
                                         safetyCounter++;
                                     }
                                 }
@@ -906,7 +934,7 @@
                     if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
                     newRoomRef.set({ name: this.newRoomName.trim(), createdAt: Date.now() });
-                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false, rotationMode: 'teacher', columnsPerRow: 3 });
+                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false, rotationMode: 'teacher', columnsPerRow: 3, sequentialDisplayEnabled: false, currentVisibleCategoryCount: 1 });
                     this.newRoomName = '';
                     alert('✅ 討論區建立成功！');
                 },
@@ -1019,6 +1047,7 @@
                             });
                             
                             Object.keys(val).forEach(k => {
+                                // 在學員畫面處理未分類時，必須比對所有的 roomCategories 避免被隱藏的分類跑進未分類中
                                 if (k !== 'default' && !this.roomCategories.find(c => c.id === k)) {
                                     let node = val[k];
                                     let text = typeof node === 'object' ? (node.text || '') : node;
@@ -1147,7 +1176,8 @@
 
                     let result = [];
                     if (this.roomCategories && this.roomCategories.length > 0) {
-                        this.roomCategories.forEach(cat => {
+                        // 這裡使用 visibleRoomCategories 讓講師跟投影畫面也跟著「逐項顯示」
+                        this.visibleRoomCategories.forEach(cat => {
                             let lines = [];
                             if (data[cat.id]) {
                                 lines = Object.values(data[cat.id]).map(node => {
@@ -1165,6 +1195,7 @@
                         }
                         
                         Object.keys(data).forEach(k => {
+                            // 檢查是否為未分類時，必須比對所有的 roomCategories 避免被隱藏的分類跑進未分類中
                             if (k !== 'default' && !this.roomCategories.find(c => c.id === k)) {
                                 let node = data[k];
                                 let text = typeof node === 'object' ? (node.text || '') : node;
@@ -1214,6 +1245,16 @@
                         this.allGroupsData = {};
                     }
                 },
+                
+                changeVisibleCategoryCount(delta) {
+                    let newVal = this.currentVisibleCategoryCount + delta;
+                    if (newVal < 1) newVal = 1;
+                    if (newVal > this.roomCategories.length) newVal = this.roomCategories.length;
+                    db.ref(`discussion_rooms/${this.roomId}/settings/currentVisibleCategoryCount`).set(newVal);
+                },
+                showAllCategories() {
+                    db.ref(`discussion_rooms/${this.roomId}/settings/currentVisibleCategoryCount`).set(this.roomCategories.length);
+                },
 
                 openSettingsModal() {
                     this.tempPasswords = { ...this.savedPasswords };
@@ -1221,6 +1262,7 @@
                     this.tempCategories = JSON.parse(JSON.stringify(this.roomCategories || []));
                     this.tempGroupTopics = { ...this.groupTopics };
                     this.tempAllowUncategorized = this.allowUncategorized; 
+                    this.tempSequentialDisplayEnabled = this.sequentialDisplayEnabled;
                     this.tempEnableRotation = this.enableRotation; 
                     this.tempRotationMode = this.rotationMode; 
                     this.tempColumnsPerRow = this.columnsPerRow;
@@ -1243,6 +1285,11 @@
                     if (this.tempGroupCount !== this.groupCount || !this.tempEnableRotation) {
                         newRound = 0; 
                     }
+                    
+                    let newVisibleCount = this.currentVisibleCategoryCount || 1;
+                    if (this.tempSequentialDisplayEnabled && !this.sequentialDisplayEnabled) {
+                        newVisibleCount = 1; 
+                    }
 
                     db.ref(`discussion_rooms/${this.roomId}/settings`).update({
                         passwords: this.tempPasswords,
@@ -1250,6 +1297,8 @@
                         categories: validCategories,
                         groupTopics: this.tempGroupTopics,
                         allowUncategorized: this.tempAllowUncategorized,
+                        sequentialDisplayEnabled: this.tempSequentialDisplayEnabled,
+                        currentVisibleCategoryCount: newVisibleCount,
                         enableRotation: this.tempEnableRotation, 
                         rotationMode: this.tempRotationMode,
                         columnsPerRow: this.tempColumnsPerRow,
