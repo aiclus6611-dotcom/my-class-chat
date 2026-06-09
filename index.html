@@ -74,7 +74,8 @@
         .student-view { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .group-badge { background: #1976d2; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9rem; display: inline-block; margin-bottom: 20px;}
         
-        .group-topic-box { background: #eef2ff; border: 2px solid #c7d2fe; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; color: #3730a3; font-size: 1.1rem; font-weight: bold; }
+        /* 修改此處：增加 white-space: pre-wrap 讓題目換行生效 */
+        .group-topic-box { background: #eef2ff; border: 2px solid #c7d2fe; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; color: #3730a3; font-size: 1.1rem; font-weight: bold; white-space: pre-wrap; word-wrap: break-word; }
         
         /* 學員畫面上方標頭固定 (Sticky) */
         .sticky-top-box {
@@ -131,7 +132,8 @@
         .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; font-size:1.2rem; }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
-        .teacher-group-topic { background: #eef2ff; color: #3730a3; padding: 8px 10px; border-radius: 6px; font-size: 0.95rem; margin-bottom: 15px; border: 1px solid #c7d2fe; font-weight: bold; }
+        /* 修改此處：增加 white-space: pre-wrap 讓題目換行生效 */
+        .teacher-group-topic { background: #eef2ff; color: #3730a3; padding: 8px 10px; border-radius: 6px; font-size: 0.95rem; margin-bottom: 15px; border: 1px solid #c7d2fe; font-weight: bold; white-space: pre-wrap; word-wrap: break-word; }
 
         .category-block { margin-bottom: 15px; }
         .cat-title { margin: 10px 0 5px 0; color: #d84315; font-size: 1.05rem; border-bottom: 1px dashed #ffe0b2; padding-bottom: 3px; font-weight:bold;}
@@ -152,7 +154,9 @@
         .modal-section h4 { margin: 0 0 10px 0; color: #555; }
         .modal-input-group { margin-bottom: 10px; display: flex; align-items: center; }
         .modal-input-group label { width: 80px; font-weight: bold; }
-        .modal-input-group select, .modal-input-group input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;}
+        /* 修改此處：將 textarea 納入輸入框共用樣式，並設定 textarea 專屬高度與字體 */
+        .modal-input-group select, .modal-input-group input, .modal-input-group textarea { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box;}
+        .modal-input-group textarea { resize: vertical; font-family: inherit; min-height: 70px; }
         .modal-actions { text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
 
         .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(248, 250, 252, 0.9); display: flex; justify-content: center; align-items: center; z-index: 999; font-size: 1.5rem; color: #475569; font-weight: bold;}
@@ -642,10 +646,10 @@
 
                     <div class="modal-section">
                         <h4>2. 設定各組專屬題目 (留空即無指定題目)</h4>
-                        <p style="font-size:0.9rem; color:#666; margin-top:0;">若想讓不同組別討論不同主題，請在此輸入。例如：第一與第二組輸入相同題目A，第三與第四組輸入題目B。</p>
-                        <div v-for="i in tempGroupCount" :key="i" class="modal-input-group">
-                            <label>第 {{i}} 組</label>
-                            <input type="text" v-model="tempGroupTopics[i]" placeholder="輸入本組討論題目...">
+                        <p style="font-size:0.9rem; color:#666; margin-top:0;">若想讓不同組別討論不同主題，請在此輸入。<br><strong>可直接按 Enter 鍵換行以控制顯示排版。</strong>例如：第一與第二組輸入相同題目A，第三與第四組輸入題目B。</p>
+                        <div v-for="i in tempGroupCount" :key="i" class="modal-input-group" style="align-items: flex-start;">
+                            <label style="margin-top: 8px;">第 {{i}} 組</label>
+                            <textarea v-model="tempGroupTopics[i]" placeholder="輸入本組討論題目... (可按 Enter 換行)"></textarea>
                         </div>
                     </div>
 
