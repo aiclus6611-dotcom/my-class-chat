@@ -161,7 +161,7 @@
         .projection-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
             background: #f1f5f9; z-index: 9999;
-            display: flex; flex-direction: column; overflow: hidden; /* 防止整個螢幕往下滾 */
+            display: flex; flex-direction: column; overflow: hidden;
             box-sizing: border-box;
         }
         .projection-header {
@@ -171,28 +171,39 @@
             box-sizing: border-box;
         }
         
-        /* 隱藏/顯示投影控制列的懸浮按鈕 */
+        /* 隱藏/顯示投影控制列的懸浮按鈕 (升級為可拖曳的齒輪圖示) */
         .projection-floating-btn {
-            position: absolute; top: 15px; right: 20px; background: rgba(30, 41, 59, 0.9);
-            color: white; padding: 10px 20px; border-radius: 8px; font-size: 1rem; font-weight: bold;
-            cursor: pointer; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s; border: 1px solid #475569;
+            position: absolute; 
+            background: rgba(30, 41, 59, 0.9);
+            color: white; 
+            width: 50px; height: 50px; /* 改為正方形並加上圓角變成圓形 */
+            border-radius: 50%; 
+            font-size: 1.5rem; 
+            display: flex; justify-content: center; align-items: center;
+            cursor: grab; 
+            z-index: 10000; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+            transition: background-color 0.2s, transform 0.1s; 
+            border: 2px solid #475569;
+            user-select: none;
         }
-        .projection-floating-btn:hover { background: #0f172a; }
+        .projection-floating-btn:hover { background: #0f172a; transform: scale(1.05); }
+        .projection-floating-btn:active { cursor: grabbing; transform: scale(0.95); }
 
         .projection-body {
             flex: 1; padding: 20px; overflow: hidden; display: flex; flex-direction: column;
             box-sizing: border-box;
-            min-height: 0; /* Flexbox 防止撐破外框的重要設定 */
+            min-height: 0;
         }
         .projection-grid {
             flex: 1; display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); gap: 20px;
-            min-height: 0; /* Grid 防止撐破外框的重要設定 */
+            min-height: 0;
             box-sizing: border-box;
         }
         .projection-card {
             background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             display: flex; flex-direction: column; border: 2px solid #cbd5e1; 
-            height: 100%; min-height: 0; /* 強制外框鎖定在螢幕視角內 */
+            height: 100%; min-height: 0;
             box-sizing: border-box;
             overflow: hidden;
         }
@@ -203,17 +214,15 @@
         }
         .projection-card-content {
             padding: 15px; flex: 1; 
-            overflow: hidden !important; /* 絕對鎖死，不允許滾動條出現 */ 
+            overflow: hidden !important;
             position: relative;
-            min-height: 0; /* Flexbox 防止撐破外框的重要設定 */
+            min-height: 0;
             box-sizing: border-box;
         }
         .projection-inner {
             width: 100%; 
-            /* 取消 transition 動畫，避免計算高度時抓到錯誤的中間值 */
         }
 
-        /* 標籤接力式排版 (不用原來的ul li) */
         .proj-category-block { margin-bottom: 12px; }
         .proj-inline-container { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
         .proj-inline-item { 
@@ -229,8 +238,15 @@
 
         <div v-if="showProjection" class="projection-overlay">
             
-            <div class="projection-floating-btn" v-if="!showProjectionHeader" @click="showProjectionHeader = true">
-                ⚙️ 顯示控制列
+            <div class="projection-floating-btn" 
+                 v-if="!showProjectionHeader" 
+                 ref="floatingBtn"
+                 :style="floatingBtnStyle"
+                 @mousedown.stop="startDrag"
+                 @touchstart.stop="startDrag"
+                 @click.stop="handleFloatingBtnClick"
+                 title="拖曳移動，點擊顯示控制列">
+                ⚙️
             </div>
 
             <div class="projection-header" v-if="showProjectionHeader">
@@ -766,7 +782,15 @@
                     attemptingGroup: null,
                     studentInputPassword: '',
                     loginError: '',
-                    pendingAutoGroup: null 
+                    pendingAutoGroup: null,
+
+                    // 拖曳按鈕相關變數
+                    floatingBtnX: null,
+                    floatingBtnY: null,
+                    isDraggingFloatingBtn: false,
+                    dragStartX: 0,
+                    dragStartY: 0,
+                    hasDragged: false
                 }
             },
             computed: {
@@ -780,12 +804,25 @@
                         return this.roomCategories.slice(0, count);
                     }
                     return this.roomCategories;
+                },
+                floatingBtnStyle() {
+                    if (this.floatingBtnX === null || this.floatingBtnY === null) {
+                        return { top: '15px', right: '20px' };
+                    }
+                    return {
+                        top: this.floatingBtnY + 'px',
+                        left: this.floatingBtnX + 'px',
+                        right: 'auto'
+                    };
                 }
             },
             watch: {
                 showProjection(newVal) {
                     if(newVal) {
                         this.adjustProjectionScale();
+                        // 重新進入投影模式時，重置圖示位置回預設右上方
+                        this.floatingBtnX = null;
+                        this.floatingBtnY = null;
                     } else {
                         this.showProjectionHeader = false; 
                     }
@@ -866,6 +903,76 @@
                 }
             },
             methods: {
+                // --- 拖曳按鈕相關方法 ---
+                startDrag(e) {
+                    this.isDraggingFloatingBtn = true;
+                    this.hasDragged = false;
+                    
+                    let clientX, clientY;
+                    if (e.type.startsWith('touch')) {
+                        clientX = e.touches[0].clientX;
+                        clientY = e.touches[0].clientY;
+                    } else {
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    }
+
+                    const rect = this.$refs.floatingBtn.getBoundingClientRect();
+                    
+                    if (this.floatingBtnX === null) {
+                        this.floatingBtnX = rect.left;
+                        this.floatingBtnY = rect.top;
+                    }
+
+                    this.dragStartX = clientX - this.floatingBtnX;
+                    this.dragStartY = clientY - this.floatingBtnY;
+
+                    document.addEventListener('mousemove', this.onDrag);
+                    document.addEventListener('touchmove', this.onDrag, { passive: false });
+                    document.addEventListener('mouseup', this.stopDrag);
+                    document.addEventListener('touchend', this.stopDrag);
+                },
+                onDrag(e) {
+                    if (!this.isDraggingFloatingBtn) return;
+                    
+                    let clientX, clientY;
+                    if (e.type.startsWith('touch')) {
+                        clientX = e.touches[0].clientX;
+                        clientY = e.touches[0].clientY;
+                        e.preventDefault(); // 防止手機拖曳時捲動螢幕
+                    } else {
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    }
+
+                    const newX = clientX - this.dragStartX;
+                    const newY = clientY - this.dragStartY;
+
+                    if (Math.abs(newX - this.floatingBtnX) > 3 || Math.abs(newY - this.floatingBtnY) > 3) {
+                        this.hasDragged = true;
+                    }
+
+                    // 邊界限制 (避免按鈕被拖出螢幕外，寬高抓50px)
+                    const maxX = window.innerWidth - 50; 
+                    const maxY = window.innerHeight - 50; 
+                    
+                    this.floatingBtnX = Math.max(0, Math.min(newX, maxX));
+                    this.floatingBtnY = Math.max(0, Math.min(newY, maxY));
+                },
+                stopDrag() {
+                    this.isDraggingFloatingBtn = false;
+                    document.removeEventListener('mousemove', this.onDrag);
+                    document.removeEventListener('touchmove', this.onDrag);
+                    document.removeEventListener('mouseup', this.stopDrag);
+                    document.removeEventListener('touchend', this.stopDrag);
+                },
+                handleFloatingBtnClick() {
+                    if (!this.hasDragged) {
+                        this.showProjectionHeader = true;
+                    }
+                },
+                // -----------------------
+
                 adjustProjectionScale() {
                     if (!this.showProjection) return;
                     this.$nextTick(() => {
@@ -1047,7 +1154,6 @@
                             });
                             
                             Object.keys(val).forEach(k => {
-                                // 在學員畫面處理未分類時，必須比對所有的 roomCategories 避免被隱藏的分類跑進未分類中
                                 if (k !== 'default' && !this.roomCategories.find(c => c.id === k)) {
                                     let node = val[k];
                                     let text = typeof node === 'object' ? (node.text || '') : node;
@@ -1176,7 +1282,6 @@
 
                     let result = [];
                     if (this.roomCategories && this.roomCategories.length > 0) {
-                        // 這裡使用 visibleRoomCategories 讓講師跟投影畫面也跟著「逐項顯示」
                         this.visibleRoomCategories.forEach(cat => {
                             let lines = [];
                             if (data[cat.id]) {
@@ -1195,7 +1300,6 @@
                         }
                         
                         Object.keys(data).forEach(k => {
-                            // 檢查是否為未分類時，必須比對所有的 roomCategories 避免被隱藏的分類跑進未分類中
                             if (k !== 'default' && !this.roomCategories.find(c => c.id === k)) {
                                 let node = data[k];
                                 let text = typeof node === 'object' ? (node.text || '') : node;
