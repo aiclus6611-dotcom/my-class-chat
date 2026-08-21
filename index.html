@@ -129,8 +129,44 @@
         @media (max-width: 768px) { .teacher-grid { grid-template-columns: 1fr; } }
         
         .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; display:flex; flex-direction: column;}
+        .group-card.overview-card { cursor: zoom-in; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; border: 1px solid transparent; }
+        .group-card.overview-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(15,23,42,0.12); border-color: #bfdbfe; }
         .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; font-size:1.2rem; }
-        .card-header-flex { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .card-header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .btn-focus-small { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .btn-focus-small:hover { background: #dbeafe; }
+
+        /* 講師分點呈現：直式列表 / 橫式欄位 */
+        .teacher-grid.horizontal-overview { grid-template-columns: 1fr !important; }
+        .teacher-category-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--cat-cols, 1), minmax(160px, 1fr));
+            gap: 12px;
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            box-sizing: border-box;
+        }
+        .teacher-category-column {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;
+            min-width: 0; box-sizing: border-box;
+        }
+        .teacher-category-column .cat-title { margin-top: 0; }
+        .teacher-category-column ul { padding-left: 20px; margin: 8px 0 0; }
+        .teacher-category-column li { margin-bottom: 8px; line-height: 1.5; word-break: break-word; }
+
+        /* 單組放大檢視 */
+        .group-focus-panel {
+            background: white; border-radius: 12px; box-shadow: 0 8px 28px rgba(15,23,42,0.12);
+            border: 2px solid #bfdbfe; padding: 22px; box-sizing: border-box;
+        }
+        .group-focus-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+        .group-focus-title { font-size:1.45rem; font-weight:bold; color:#1976d2; }
+        .display-mode-switch { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .display-mode-switch .mode-label { color:#64748b; font-size:0.92rem; font-weight:bold; }
+        .mode-btn { border:1px solid #cbd5e1; background:#fff; color:#475569; border-radius:7px; padding:7px 11px; cursor:pointer; font-weight:bold; }
+        .mode-btn.active { background:#1976d2; color:#fff; border-color:#1976d2; }
         
         /* 修改此處：增加 white-space: pre-wrap 讓題目換行生效 */
         .teacher-group-topic { background: #eef2ff; color: #3730a3; padding: 8px 10px; border-radius: 6px; font-size: 0.95rem; margin-bottom: 15px; border: 1px solid #c7d2fe; font-weight: bold; white-space: pre-wrap; word-wrap: break-word; }
@@ -234,6 +270,22 @@
             display: inline-flex; align-items: center; line-height: 1.3; font-size: 0.95em; color: #334155; 
             word-break: break-all;
         }
+        .projection-display-switch {
+            display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+            background:rgba(255,255,255,0.08); padding:6px 8px; border-radius:8px;
+        }
+        .projection-display-switch span { font-size:0.9rem; color:#e2e8f0; font-weight:bold; }
+        .projection-display-switch .mode-btn { padding:5px 9px; font-size:0.85rem; border-color:#64748b; background:#334155; color:#e2e8f0; }
+        .projection-display-switch .mode-btn.active { background:#0ea5e9; border-color:#38bdf8; color:white; }
+        .projection-category-grid {
+            display:grid; grid-template-columns:repeat(var(--cat-cols, 1), minmax(0, 1fr)); gap:8px; width:100%;
+        }
+        .projection-category-column { background:#f8fafc; border:1px solid #cbd5e1; border-radius:7px; padding:8px; min-width:0; }
+        .projection-category-column .cat-title { margin-top:0 !important; }
+        .proj-column-items { display:flex; flex-direction:column; gap:6px; }
+        .proj-column-item {
+            background:white; border:1px solid #e2e8f0; padding:6px 8px; border-radius:6px; line-height:1.35; color:#334155; word-break:break-word;
+        }
     </style>
 </head>
 <body>
@@ -253,9 +305,14 @@
                 ⚙️
             </div>
 
-            <div class="projection-header" v-if="showProjectionHeader">
+            <div class="projection-header" v-if="showProjectionHeader" style="gap:12px; flex-wrap:wrap;">
                 <h2 style="margin:0; font-size: 1.5rem;">📺 學員討論投影畫面：{{ currentRoomName }}</h2>
-                <div style="display: flex; gap: 10px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                    <div v-if="roomCategories && roomCategories.length > 0" class="projection-display-switch">
+                        <span>分點呈現：</span>
+                        <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">☰ 直式</button>
+                        <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">▦ 橫式</button>
+                    </div>
                     <button class="btn btn-gray" style="margin:0;" @click="showProjectionHeader = false">⬆ 隱藏控制列</button>
                     <button class="btn btn-red" style="margin:0;" @click="showProjection = false">✖ 關閉投影模式</button>
                 </div>
@@ -285,17 +342,38 @@
                         <div class="projection-card-content" :ref="'projWrapper_' + i">
                             <div class="projection-inner" :ref="'projInner_' + i">
                                 <template v-if="hasData(getDisplayBoardId(i))">
-                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="proj-category-block">
-                                        <div v-if="block.title" class="cat-title" style="margin-bottom: 8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
-                                            {{ block.title }}
+                                    <!-- 橫式：分點橫向成欄，每欄內容向下排列 -->
+                                    <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
+                                         class="projection-category-grid"
+                                         :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(i)).length) }">
+                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="projection-category-column">
+                                            <div v-if="block.title" class="cat-title" style="margin-bottom:8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                                {{ block.title }}
+                                            </div>
+                                            <div v-if="block.lines.length > 0" class="proj-column-items">
+                                                <div class="proj-column-item" v-for="(line, k) in block.lines" :key="k">
+                                                    <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                    {{ line.text }}
+                                                </div>
+                                            </div>
+                                            <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
                                         </div>
-                                        <div v-if="block.lines.length > 0" class="proj-inline-container">
-                                            <span class="proj-inline-item" v-for="(line, k) in block.lines" :key="k">
-                                                {{ line.text }}
-                                            </span>
-                                        </div>
-                                        <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
                                     </div>
+
+                                    <!-- 直式：維持原本由上往下的分點列表 -->
+                                    <template v-else>
+                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="proj-category-block">
+                                            <div v-if="block.title" class="cat-title" style="margin-bottom: 8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                                {{ block.title }}
+                                            </div>
+                                            <div v-if="block.lines.length > 0" class="proj-inline-container">
+                                                <span class="proj-inline-item" v-for="(line, k) in block.lines" :key="k">
+                                                    {{ line.text }}
+                                                </span>
+                                            </div>
+                                            <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
+                                        </div>
+                                    </template>
                                 </template>
                                 <p v-else class="empty-text">尚無內容...</p>
                             </div>
@@ -352,7 +430,7 @@
             </div>
 
             <div class="container">
-                <h1 style="margin-top: 30px;">{{ isTeacher ? '講師總覽看板' : (currentGroup ? '分組討論區' : '請選擇組別') }}</h1>
+                <h1 style="margin-top: 30px;">{{ isTeacher ? (focusedGroup ? '單組放大檢視' : '講師總覽看板') : (currentGroup ? '分組討論區' : '請選擇組別') }}</h1>
                 <div class="room-title">📍 當前討論：{{ currentRoomName }}</div>
 
                 <div v-if="!isTeacher && !currentGroup" class="group-selector-container">
@@ -480,7 +558,7 @@
 
                 <div v-if="isTeacher">
                     
-                    <div v-if="sequentialDisplayEnabled && roomCategories && roomCategories.length > 0" style="box-sizing: border-box; width: 100%; margin-bottom: 20px; background: #e0f2f1; padding: 20px; border-radius: 8px; border: 2px solid #80cbc4;">
+                    <div v-if="!focusedGroup && sequentialDisplayEnabled && roomCategories && roomCategories.length > 0" style="box-sizing: border-box; width: 100%; margin-bottom: 20px; background: #e0f2f1; padding: 20px; border-radius: 8px; border: 2px solid #80cbc4;">
                         <h4 style="margin:0 0 15px 0; color:#00695c; text-align:center; font-size:1.2rem;">
                             👁️ 手動逐項顯示分點控制
                         </h4>
@@ -503,16 +581,79 @@
                         </div>
                     </div>
 
-                    <div class="teacher-grid" :style="{ '--cols': columnsPerRow }">
-                        <div v-for="i in groupCount" :key="i" class="group-card">
+                    <!-- 單組放大檢視 -->
+                    <div v-if="focusedGroup" class="group-focus-panel">
+                        <div class="group-focus-toolbar">
+                            <button class="btn btn-gray" style="margin:0;" @click="closeGroupFocus">⬅ 返回總覽</button>
+                            <div class="group-focus-title">
+                                <span v-if="enableRotation && rotationMode === 'student'">第 {{ focusedGroup }} 組學員位置</span>
+                                <span v-else>第 {{ focusedGroup }} 組主題板</span>
+                            </div>
+                            <div v-if="roomCategories && roomCategories.length > 0" class="display-mode-switch">
+                                <span class="mode-label">分點呈現</span>
+                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">☰ 直式</button>
+                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">▦ 橫式</button>
+                            </div>
+                        </div>
+
+                        <div v-if="currentRound > 0" style="background:#fef3c7; color:#d97706; padding:8px 10px; border-radius:6px; font-size:1rem; border:1px solid #fde68a; margin-bottom:12px;">
+                            <template v-if="rotationMode === 'student'">
+                                📝 目前正在討論 <strong>第 {{ getDisplayBoardId(focusedGroup) }} 組</strong> 的主題板
+                            </template>
+                            <template v-else>
+                                📝 目前由 <strong>第 {{ getDisplayWriterId(focusedGroup) }} 組</strong> 填寫中
+                            </template>
+                        </div>
+
+                        <div v-if="groupTopics && groupTopics[getDisplayBoardId(focusedGroup)]" class="teacher-group-topic">
+                            🎯 題目：{{ groupTopics[getDisplayBoardId(focusedGroup)] }}
+                        </div>
+
+                        <div class="group-content">
+                            <template v-if="hasData(getDisplayBoardId(focusedGroup))">
+                                <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
+                                     class="teacher-category-grid"
+                                     :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup)).length) }">
+                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup))" :key="bIndex" class="teacher-category-column">
+                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
+                                        <ul v-if="block.lines.length > 0">
+                                            <li v-for="(line, k) in block.lines" :key="k">
+                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                <span>{{ line.text }}</span>
+                                            </li>
+                                        </ul>
+                                        <p v-else class="empty-text" style="margin-top:8px;">(尚無內容)</p>
+                                    </div>
+                                </div>
+                                <template v-else>
+                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup))" :key="bIndex" class="category-block">
+                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
+                                        <ul v-if="block.lines.length > 0">
+                                            <li v-for="(line, k) in block.lines" :key="k">
+                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                <span>{{ line.text }}</span>
+                                            </li>
+                                        </ul>
+                                        <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
+                                    </div>
+                                </template>
+                            </template>
+                            <p v-else class="empty-text">尚無內容...</p>
+                        </div>
+                    </div>
+
+                    <!-- 講師總覽：點任一組即可放大 -->
+                    <div v-else class="teacher-grid" :class="{ 'horizontal-overview': teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0 }" :style="{ '--cols': columnsPerRow }">
+                        <div v-for="i in groupCount" :key="i" class="group-card overview-card" @click="openGroupFocus(i)" title="點擊放大檢視本組">
                             <h3 style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
                                 <div class="card-header-flex">
                                     <span v-if="enableRotation && rotationMode === 'student'">第 {{ i }} 組學員位置</span>
                                     <span v-else>第 {{ i }} 組主題板</span>
                                     
-                                    <div>
-                                        <span v-if="savedPasswords[i]" title="密碼保護" style="font-size:1rem; margin-right:5px;">🔒</span>
-                                        <button class="btn-copy-small" @click="copySpecificGroupLink(i)">🔗 連結</button>
+                                    <div class="card-header-actions">
+                                        <span v-if="savedPasswords[i]" title="密碼保護" style="font-size:1rem;">🔒</span>
+                                        <button class="btn-focus-small" @click.stop="openGroupFocus(i)">🔍 放大</button>
+                                        <button class="btn-copy-small" @click.stop="copySpecificGroupLink(i)">🔗 連結</button>
                                     </div>
                                 </div>
                                 <div v-if="currentRound > 0" style="background:#fef3c7; color:#d97706; padding:4px 8px; border-radius:4px; font-size:0.95rem; border:1px solid #fde68a; font-weight:normal; width:calc(100% - 18px); box-sizing: border-box;">
@@ -531,18 +672,34 @@
 
                             <div class="group-content">
                                 <template v-if="hasData(getDisplayBoardId(i))">
-                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="category-block">
-                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
-                                            {{ block.title }}
+                                    <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
+                                         class="teacher-category-grid"
+                                         :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(i)).length) }">
+                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="teacher-category-column">
+                                            <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
+                                            <ul v-if="block.lines.length > 0">
+                                                <li v-for="(line, k) in block.lines" :key="k">
+                                                    <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                    <span>{{ line.text }}</span>
+                                                </li>
+                                            </ul>
+                                            <p v-else class="empty-text" style="margin-top:8px;">(尚無內容)</p>
                                         </div>
-                                        <ul v-if="block.lines.length > 0">
-                                            <li v-for="(line, k) in block.lines" :key="k">
-                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
-                                                <span>{{ line.text }}</span>
-                                            </li>
-                                        </ul>
-                                        <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
                                     </div>
+                                    <template v-else>
+                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="category-block">
+                                            <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                                {{ block.title }}
+                                            </div>
+                                            <ul v-if="block.lines.length > 0">
+                                                <li v-for="(line, k) in block.lines" :key="k">
+                                                    <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                    <span>{{ line.text }}</span>
+                                                </li>
+                                            </ul>
+                                            <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
+                                        </div>
+                                    </template>
                                 </template>
                                 <p v-else class="empty-text">尚無內容...</p>
                             </div>
@@ -583,6 +740,14 @@
                                 </div>
                             </div>
 
+                        </div>
+
+                        <div v-if="roomCategories && roomCategories.length > 0" class="teacher-controls" style="margin-bottom: 10px;">
+                            <div class="display-mode-switch" style="background:white; border:1px solid #e2e8f0; padding:8px 10px; border-radius:8px;">
+                                <span class="mode-label">講師分點呈現：</span>
+                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">☰ 直式列表</button>
+                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">▦ 橫式欄位</button>
+                            </div>
                         </div>
 
                         <div class="teacher-controls" style="margin-bottom: 20px;">
@@ -668,6 +833,19 @@
                                 開啟「講師手動逐項顯示」功能
                             </label>
                             <p style="font-size:0.85rem; color:#888; margin: 5px 0 0 26px;">開啟後，學員初始只會看見第一個分點。講師需在總覽面板手動點擊按鈕，依序開放後續的分點。</p>
+
+                            <div style="margin-top:15px; padding-top:15px; border-top:1px dashed #ccc;">
+                                <div style="font-weight:bold; color:#334155; margin-bottom:8px;">講師預設分點呈現方式：</div>
+                                <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; margin-bottom:8px; color:#475569;">
+                                    <input type="radio" v-model="tempTeacherDisplayMode" value="vertical" style="margin-top:3px;">
+                                    <span><strong>☰ 直式列表</strong>：分點由上往下排列，例如「流程 → 目的 → 規則 → 執行細節」。</span>
+                                </label>
+                                <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; color:#475569;">
+                                    <input type="radio" v-model="tempTeacherDisplayMode" value="horizontal" style="margin-top:3px;">
+                                    <span><strong>▦ 橫式欄位</strong>：分點橫向排成欄，例如「流程｜目的｜規則｜執行細節」，各欄的學員討論向下排列。</span>
+                                </label>
+                                <p style="font-size:0.85rem; color:#888; margin:7px 0 0 26px;">只影響講師總覽、單組放大與全螢幕投影；學員填寫畫面仍維持原本像海報一樣由上往下書寫。</p>
+                            </div>
                         </div>
 
                         <div v-for="(cat, index) in tempCategories" :key="cat.id" class="modal-input-group">
@@ -771,6 +949,11 @@
 
                     columnsPerRow: 3,
                     tempColumnsPerRow: 3,
+
+                    // 講師分點呈現方式：vertical=直式列表；horizontal=橫式欄位
+                    teacherDisplayMode: 'vertical',
+                    tempTeacherDisplayMode: 'vertical',
+                    focusedGroup: null,
 
                     showProjection: false,
                     showProjectionHeader: false, 
@@ -878,6 +1061,8 @@
                         this.enableRotation = settings.enableRotation === true; 
                         this.rotationMode = settings.rotationMode || 'teacher';
                         this.columnsPerRow = settings.columnsPerRow || 3;
+                        this.teacherDisplayMode = settings.teacherDisplayMode || 'vertical';
+                        if (this.focusedGroup && this.focusedGroup > this.groupCount) this.focusedGroup = null;
                         
                         this.sequentialDisplayEnabled = settings.sequentialDisplayEnabled === true;
                         this.currentVisibleCategoryCount = settings.currentVisibleCategoryCount || 1;
@@ -1033,7 +1218,7 @@
                         newRoomRef.set({ name: newName.trim(), createdAt: Date.now() });
                         
                         db.ref(`discussion_rooms/${room.id}/settings`).once('value', (snap) => {
-                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, enableRotation: false, columnsPerRow: 3 };
+                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, enableRotation: false, columnsPerRow: 3, teacherDisplayMode: 'vertical' };
                             oldSettings.currentRound = 0; 
                             db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set(oldSettings)
                                 .then(() => alert('✅ 討論區與其設定複製成功！(舊討論內容未複製)'))
@@ -1046,7 +1231,7 @@
                     if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
                     newRoomRef.set({ name: this.newRoomName.trim(), createdAt: Date.now() });
-                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false, rotationMode: 'teacher', columnsPerRow: 3, sequentialDisplayEnabled: false, currentVisibleCategoryCount: 1 });
+                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false, rotationMode: 'teacher', columnsPerRow: 3, teacherDisplayMode: 'vertical', sequentialDisplayEnabled: false, currentVisibleCategoryCount: 1 });
                     this.newRoomName = '';
                     alert('✅ 討論區建立成功！');
                 },
@@ -1276,6 +1461,26 @@
                     }
                 },
 
+                // 講師總覽單組放大 / 返回總覽
+                openGroupFocus(groupNum) {
+                    this.focusedGroup = groupNum;
+                    this.$nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+                },
+                closeGroupFocus() {
+                    this.focusedGroup = null;
+                    this.$nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+                },
+
+                // 直式 / 橫式可在講師畫面與投影控制列即時切換，並同步保存為本討論區預設
+                setTeacherDisplayMode(mode) {
+                    if (mode !== 'vertical' && mode !== 'horizontal') return;
+                    this.teacherDisplayMode = mode;
+                    if (this.roomId) {
+                        db.ref(`discussion_rooms/${this.roomId}/settings/teacherDisplayMode`).set(mode);
+                    }
+                    if (this.showProjection) this.adjustProjectionScale();
+                },
+
                 listenToAllData() {
                     db.ref(`discussion_rooms/${this.roomId}/groups`).on('value', (snapshot) => {
                         this.allGroupsData = snapshot.val() || {};
@@ -1375,6 +1580,7 @@
                     this.tempEnableRotation = this.enableRotation; 
                     this.tempRotationMode = this.rotationMode; 
                     this.tempColumnsPerRow = this.columnsPerRow;
+                    this.tempTeacherDisplayMode = this.teacherDisplayMode;
                     
                     this.showTeacherModal = true;
                 },
@@ -1411,6 +1617,7 @@
                         enableRotation: this.tempEnableRotation, 
                         rotationMode: this.tempRotationMode,
                         columnsPerRow: this.tempColumnsPerRow,
+                        teacherDisplayMode: this.tempTeacherDisplayMode,
                         currentRound: newRound
                     }).then(() => {
                         this.showTeacherModal = false;
