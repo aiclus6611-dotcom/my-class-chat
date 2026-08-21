@@ -920,34 +920,27 @@
                                                 <div class="student-cell-points-wrap">
                                                     <span v-if="enableRotation && item.authorGroup === currentGroup" class="author-tag author-tag-self" style="margin-top:7px;">第 {{currentGroup}} 組</span>
                                                     <div class="table-points-editor">
-                                                        <div v-for="(point, pointIndex) in getTableCellEditorPoints(item.text)"
+                                                        <!--
+                                                            表格儲存格也比照一般討論列點：永遠保留一個可直接輸入的空白點。
+                                                            不必先按「＋」；只要開始打字，就立即寫入目前儲存格並同步 Firebase。
+                                                            當這一點有內容後，畫面會自動再長出下一個空白點。
+                                                        -->
+                                                        <div v-for="(point, pointIndex) in getTableCellInputPoints(item.text)"
                                                              :key="pointIndex" class="table-point-edit-row">
                                                             <span class="row-bullet">●</span>
                                                             <input type="text" class="row-input table-point-input"
+                                                                   :ref="'tablePoint_' + cat.id + '_' + item.key + '_' + pointIndex"
                                                                    :value="point"
-                                                                   :placeholder="`第 ${pointIndex + 1} 點...`"
+                                                                   :placeholder="pointIndex === getTableCellInputPoints(item.text).length - 1 ? `直接輸入下一點...` : `第 ${pointIndex + 1} 點...`"
                                                                    @input="updateTableCellPoint(cat.id, item, pointIndex, $event.target.value)"
                                                                    @blur="cleanupTableCellPoints(cat.id, item)"
-                                                                   @keydown.enter.prevent="focusTableCellDraft(cat.id, item)">
-                                                            <button class="icon-btn btn-del" style="width:32px;height:32px;font-size:1rem;"
+                                                                   @keydown.enter.prevent="focusNextTableCellPoint(cat.id, item, pointIndex)">
+                                                            <button v-if="point.trim() !== ''" class="icon-btn btn-del" style="width:32px;height:32px;font-size:1rem;"
                                                                     @click="removeTableCellPoint(cat.id, item, pointIndex)"
                                                                     tabindex="-1" title="刪除此點">🗑️</button>
+                                                            <span v-else style="width:32px;height:32px;flex-shrink:0;"></span>
                                                         </div>
-
-                                                        <div class="table-point-draft-row">
-                                                            <span class="row-bullet">●</span>
-                                                            <input type="text" class="row-input table-point-input table-point-draft-input"
-                                                                   :ref="'tableDraft_' + cat.id + '_' + item.key"
-                                                                   :value="tableCellDrafts[getTableCellDraftKey(cat.id, item)] || ''"
-                                                                   :placeholder="`新增「${getStudentPrimaryText(rowIndex) || `第 ${rowIndex + 1} 項`}」的${cat.name}論點...`"
-                                                                   @input="setTableCellDraft(cat.id, item, $event.target.value)"
-                                                                   @keydown.enter.prevent="commitTableCellDraft(cat.id, item)">
-                                                            <button class="table-point-add-btn"
-                                                                    :disabled="!(tableCellDrafts[getTableCellDraftKey(cat.id, item)] || '').trim()"
-                                                                    @click="commitTableCellDraft(cat.id, item)"
-                                                                    title="新增此點">＋</button>
-                                                        </div>
-                                                        <div class="table-point-hint">每一點都只會留在目前這一格內；按 Enter 或「＋」新增下一點。</div>
+                                                        <div class="table-point-hint">直接打字就會自動新增並儲存；有內容後會自動出現下一個空白點，按 Enter 可直接跳到下一點。</div>
                                                     </div>
                                                 </div>
                                             </template>
@@ -2194,6 +2187,16 @@
                     if (typeof text !== 'string' || text === '') return [];
                     return text.replace(/\r/g, '').split('\n');
                 },
+                // 編輯畫面專用：每一格永遠保留一個「下一點」空白輸入列。
+                // 使用者一開始打字時，updateTableCellPoint() 就會立刻把它寫入 item.text，
+                // 所以完全不需要另外按「＋」才算新增／儲存。
+                getTableCellInputPoints(text) {
+                    const points = this.getTableCellEditorPoints(text).slice();
+                    if (points.length === 0) return [''];
+                    const last = points[points.length - 1];
+                    if ((last || '').trim() !== '') points.push('');
+                    return points;
+                },
                 getTableCellPoints(text) {
                     return this.getTableCellEditorPoints(text)
                         .map(point => (point || '').trim())
@@ -2246,6 +2249,22 @@
                         let el = this.$refs[refName];
                         if (Array.isArray(el)) el = el[0];
                         if (el && typeof el.focus === 'function') el.focus();
+                    });
+                },
+                // Enter 只負責移到下一點；新增與儲存本身在打字的 @input 當下就已完成。
+                focusNextTableCellPoint(catId, item, pointIndex) {
+                    const currentPoints = this.getTableCellInputPoints(item.text);
+                    const currentValue = currentPoints[pointIndex] || '';
+                    if (currentValue.trim() === '') return;
+
+                    this.$nextTick(() => {
+                        const refName = 'tablePoint_' + catId + '_' + item.key + '_' + (pointIndex + 1);
+                        let el = this.$refs[refName];
+                        if (Array.isArray(el)) el = el[0];
+                        if (el && typeof el.focus === 'function') {
+                            el.focus();
+                            if (typeof el.select === 'function') el.select();
+                        }
                     });
                 },
 
