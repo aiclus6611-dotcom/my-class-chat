@@ -255,6 +255,86 @@
             margin: 5px 0 0 28px; color: #94a3b8; font-size: .78rem;
         }
 
+        /* === 表格化模式：學員端改為「每個主項目一張卡，向下完成所有分點」 === */
+        .student-table-flow-hint {
+            margin: -4px 0 16px; padding: 12px 14px; border-radius: 9px;
+            background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;
+            font-size: .94rem; line-height: 1.55;
+        }
+        .student-activity-list {
+            display: flex; flex-direction: column; gap: 18px;
+        }
+        .student-activity-card {
+            background: #fff; border: 1px solid #dbe5f0; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, .05); overflow: hidden;
+        }
+        .student-activity-head {
+            display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+            background: #fff7ed; border-bottom: 1px solid #fed7aa;
+        }
+        .student-activity-index {
+            flex-shrink: 0; padding: 5px 9px; border-radius: 999px;
+            background: #ffedd5; color: #c2410c; border: 1px solid #fdba74;
+            font-size: .82rem; font-weight: 800; white-space: nowrap;
+        }
+        .student-activity-name-wrap {
+            flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
+        }
+        .student-activity-name-input {
+            width: 100%; min-width: 0; box-sizing: border-box; padding: 11px 13px;
+            border: 1px solid #fdba74; border-radius: 7px; background: #fff;
+            color: #9a3412; font-size: 1.12rem; font-weight: 800; outline: none;
+        }
+        .student-activity-name-input:focus {
+            border-color: #ea580c; box-shadow: 0 0 0 3px rgba(234, 88, 12, .10);
+        }
+        .student-activity-name-readonly {
+            flex: 1; min-width: 0; padding: 10px 12px; border-radius: 7px;
+            background: #fff; border: 1px solid #fed7aa; color: #9a3412;
+            font-size: 1.08rem; font-weight: 800; word-break: break-word;
+        }
+        .student-activity-body {
+            padding: 6px 16px 14px;
+        }
+        .student-activity-detail {
+            padding: 15px 0; border-bottom: 1px solid #e8eef5;
+        }
+        .student-activity-detail:last-child { border-bottom: none; }
+        .student-activity-detail-title {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 9px;
+            color: #1976d2; font-size: 1.05rem; font-weight: 800;
+        }
+        .student-activity-detail-title::before {
+            content: ''; width: 4px; height: 22px; border-radius: 999px; background: #1976d2;
+        }
+        .student-activity-detail-content {
+            padding-left: 12px;
+        }
+        .student-activity-waiting {
+            margin: 12px 0 4px; padding: 11px 13px; border-radius: 8px;
+            background: #f8fafc; border: 1px dashed #cbd5e1; color: #64748b;
+            font-size: .9rem;
+        }
+        .student-activity-add-bar {
+            margin-top: 16px;
+        }
+        .student-activity-add-btn {
+            width: 100%; box-sizing: border-box; padding: 13px 15px; border-radius: 9px;
+            border: 2px dashed #93c5fd; background: #f8fbff; color: #1976d2;
+            cursor: pointer; font-size: 1rem; font-weight: 800;
+        }
+        .student-activity-add-btn:hover { background: #eff6ff; border-color: #1976d2; }
+
+        @media (max-width: 700px) {
+            .student-activity-head { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
+            .student-activity-index { margin-top: 4px; }
+            .student-activity-name-wrap { min-width: calc(100% - 90px); }
+            .student-activity-body { padding: 4px 12px 12px; }
+            .student-activity-detail-content { padding-left: 0; }
+            .student-activity-detail { padding: 13px 0; }
+            .table-point-hint { margin-left: 0; }
+        }
+
         /* 全螢幕單組海報檢視：可滾輪縮放、拖曳平移、雙擊重新置中 */
         .group-focus-overlay {
             position: fixed; inset: 0; z-index: 12000; background: #e9eef5; overflow: hidden;
@@ -852,101 +932,105 @@
                     </div>
 
                     <div v-if="roomCategories && roomCategories.length > 0">
-                        <!-- 表格化：學員仍由上往下填寫，但後續分點逐列對應第一個分點 -->
+                        <!-- 表格化：學員端改成「一個主項目一張卡」，每張卡向下完成所有分點 -->
                         <template v-if="tableModeEnabled && roomCategories.length > 1">
-                            <div class="table-mode-hint">
-                                📋 已開啟表格化對應：先在「{{ roomCategories[0].name }}」建立每一列的主項目；後面的分點會自動依同一列對應。
+                            <div class="student-table-flow-hint">
+                                📋 <strong>逐項填寫：</strong>每一個「{{ roomCategories[0].name }}」都是一張獨立的小海報。<br>
+                                先輸入這個「{{ roomCategories[0].name }}」的名稱，再<strong>直接向下</strong>完成它的
+                                <span v-for="(cat, idx) in visibleRoomCategories.slice(1)" :key="cat.id">
+                                    {{ cat.name }}<span v-if="idx < visibleRoomCategories.slice(1).length - 1">、</span>
+                                </span>
+                                <span v-if="visibleRoomCategories.length <= 1">後續分點</span>；完成後再往下填下一個，不需要跨區尋找對應項目。
                             </div>
 
-                            <div v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id" class="student-cat-box">
-                                <div class="student-cat-title">
-                                    {{ cat.name }}
-                                    <span v-if="catIndex === 0" style="font-size:.8rem; color:#c2410c; background:#fff7ed; border:1px solid #fed7aa; padding:2px 7px; border-radius:999px; margin-left:6px;">
-                                        表格主項目
-                                    </span>
-                                </div>
+                            <div class="student-activity-list">
+                                <section v-for="row in studentTableRows"
+                                         :key="row.primaryItem ? row.primaryItem.key : ('table_row_' + row.rowIndex)"
+                                         class="student-activity-card">
+                                    <!-- 每張卡的主項目就是表格的一列，例如：兩兩對練 / 上台演練 -->
+                                    <div class="student-activity-head">
+                                        <div class="student-activity-index">{{ roomCategories[0].name }} {{ row.rowIndex + 1 }}</div>
 
-                                <!-- 第一個分點：決定表格有幾列 -->
-                                <template v-if="catIndex === 0">
-                                    <div class="dynamic-input-list">
-                                        <transition-group name="list">
-                                            <div v-for="(item, rowIndex) in (groupData[cat.id] || [])" :key="item.key" class="input-row">
-                                                <span class="row-bullet">●</span>
-
-                                                <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup && item.text.trim() !== ''">
-                                                    <div class="readonly-item">
-                                                        <span class="author-tag">第 {{item.authorGroup}} 組</span>
-                                                        <span>{{ item.text }}</span>
-                                                    </div>
-                                                </template>
-
-                                                <template v-else>
-                                                    <div style="flex:1; display:flex; align-items:center;">
-                                                        <span v-if="enableRotation && item.authorGroup === currentGroup" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
-                                                        <input type="text" class="row-input" v-model="item.text"
-                                                               :placeholder="`輸入第 ${rowIndex + 1} 個${cat.name}...`"
-                                                               @input="updateItem(cat.id, item)"
-                                                               @keydown.enter.prevent="addTableRow">
-                                                    </div>
-                                                    <button class="icon-btn btn-del" @click="removeTableRow(rowIndex)" tabindex="-1" title="刪除此整列">🗑️</button>
-                                                </template>
-                                            </div>
-                                        </transition-group>
-                                    </div>
-                                    <div class="add-bar" style="border-top:none; margin-top:0; padding-top:5px;">
-                                        <button class="btn-add-small" @click="addTableRow">＋ 新增一列 {{ cat.name }}</button>
-                                    </div>
-                                </template>
-
-                                <!-- 後續分點：每一格對應第一分點的同一列 -->
-                                <template v-else>
-                                    <div class="dynamic-input-list">
-                                        <div v-for="(item, rowIndex) in (groupData[cat.id] || [])" :key="item.key" class="input-row" style="align-items:stretch;">
-                                            <div class="student-table-ref">
-                                                {{ getStudentPrimaryText(rowIndex) || `第 ${rowIndex + 1} 項` }}
-                                            </div>
-
-                                            <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup && item.text.trim() !== ''">
-                                                <div class="readonly-table-cell">
-                                                    <span class="author-tag">第 {{item.authorGroup}} 組</span>
-                                                    <ul v-if="getTableCellPoints(item.text).length > 0" class="table-cell-bullets" style="margin-top:7px;">
-                                                        <li v-for="(point, pointIndex) in getTableCellPoints(item.text)" :key="pointIndex">{{ point }}</li>
-                                                    </ul>
-                                                    <span v-else class="empty-text">（尚未填寫）</span>
+                                        <template v-if="row.primaryItem">
+                                            <template v-if="enableRotation && row.primaryItem.authorGroup && row.primaryItem.authorGroup !== currentGroup && row.primaryItem.text.trim() !== ''">
+                                                <div class="student-activity-name-readonly">
+                                                    <span class="author-tag">第 {{ row.primaryItem.authorGroup }} 組</span>
+                                                    {{ row.primaryItem.text }}
                                                 </div>
                                             </template>
-
                                             <template v-else>
-                                                <div class="student-cell-points-wrap">
-                                                    <span v-if="enableRotation && item.authorGroup === currentGroup" class="author-tag author-tag-self" style="margin-top:7px;">第 {{currentGroup}} 組</span>
-                                                    <div class="table-points-editor">
-                                                        <!--
-                                                            表格儲存格也比照一般討論列點：永遠保留一個可直接輸入的空白點。
-                                                            不必先按「＋」；只要開始打字，就立即寫入目前儲存格並同步 Firebase。
-                                                            當這一點有內容後，畫面會自動再長出下一個空白點。
-                                                        -->
-                                                        <div v-for="(point, pointIndex) in getTableCellInputPoints(item.text)"
-                                                             :key="pointIndex" class="table-point-edit-row">
-                                                            <span class="row-bullet">●</span>
-                                                            <input type="text" class="row-input table-point-input"
-                                                                   :ref="'tablePoint_' + cat.id + '_' + item.key + '_' + pointIndex"
-                                                                   :value="point"
-                                                                   :placeholder="pointIndex === getTableCellInputPoints(item.text).length - 1 ? `直接輸入下一點...` : `第 ${pointIndex + 1} 點...`"
-                                                                   @input="updateTableCellPoint(cat.id, item, pointIndex, $event.target.value)"
-                                                                   @blur="cleanupTableCellPoints(cat.id, item)"
-                                                                   @keydown.enter.prevent="focusNextTableCellPoint(cat.id, item, pointIndex)">
-                                                            <button v-if="point.trim() !== ''" class="icon-btn btn-del" style="width:32px;height:32px;font-size:1rem;"
-                                                                    @click="removeTableCellPoint(cat.id, item, pointIndex)"
-                                                                    tabindex="-1" title="刪除此點">🗑️</button>
-                                                            <span v-else style="width:32px;height:32px;flex-shrink:0;"></span>
-                                                        </div>
-                                                        <div class="table-point-hint">直接打字就會自動新增並儲存；有內容後會自動出現下一個空白點，按 Enter 可直接跳到下一點。</div>
-                                                    </div>
+                                                <div class="student-activity-name-wrap">
+                                                    <span v-if="enableRotation && row.primaryItem.authorGroup === currentGroup" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
+                                                    <input type="text"
+                                                           class="student-activity-name-input"
+                                                           v-model="row.primaryItem.text"
+                                                           :placeholder="`輸入${roomCategories[0].name}名稱...`"
+                                                           @input="updateItem(roomCategories[0].id, row.primaryItem)"
+                                                           @keydown.enter.prevent="addTableRow">
                                                 </div>
+                                                <button class="icon-btn btn-del"
+                                                        @click="removeTableRow(row.rowIndex)"
+                                                        tabindex="-1" title="刪除此整個項目與其所有對應內容">🗑️</button>
                                             </template>
+                                        </template>
+                                        <div v-else class="student-activity-name-readonly" style="color:#94a3b8; font-weight:normal;">正在建立此列...</div>
+                                    </div>
+
+                                    <div class="student-activity-body">
+                                        <div v-if="row.detailCells.length === 0" class="student-activity-waiting">
+                                            目前尚未開放後續分點；講師開放下一個分點後，會直接出現在這個「{{ row.primaryItem && row.primaryItem.text ? row.primaryItem.text : (roomCategories[0].name + ' ' + (row.rowIndex + 1)) }}」下方。
+                                        </div>
+
+                                        <!-- 同一個主項目底下，目的 / 規則 / 執行細節依序向下 -->
+                                        <div v-for="cell in row.detailCells" :key="cell.cat.id" class="student-activity-detail">
+                                            <div class="student-activity-detail-title">{{ cell.cat.name }}</div>
+                                            <div class="student-activity-detail-content">
+                                                <template v-if="cell.item">
+                                                    <template v-if="enableRotation && cell.item.authorGroup && cell.item.authorGroup !== currentGroup && cell.item.text.trim() !== ''">
+                                                        <div class="readonly-table-cell">
+                                                            <span class="author-tag">第 {{cell.item.authorGroup}} 組</span>
+                                                            <ul v-if="getTableCellPoints(cell.item.text).length > 0" class="table-cell-bullets" style="margin-top:7px;">
+                                                                <li v-for="(point, pointIndex) in getTableCellPoints(cell.item.text)" :key="pointIndex">{{ point }}</li>
+                                                            </ul>
+                                                            <span v-else class="empty-text">（尚未填寫）</span>
+                                                        </div>
+                                                    </template>
+
+                                                    <template v-else>
+                                                        <div class="student-cell-points-wrap">
+                                                            <span v-if="enableRotation && cell.item.authorGroup === currentGroup" class="author-tag author-tag-self" style="margin-top:7px;">第 {{currentGroup}} 組</span>
+                                                            <div class="table-points-editor">
+                                                                <div v-for="(point, pointIndex) in getTableCellInputPoints(cell.item.text)"
+                                                                     :key="pointIndex" class="table-point-edit-row">
+                                                                    <span class="row-bullet">●</span>
+                                                                    <input type="text" class="row-input table-point-input"
+                                                                           :ref="'tablePoint_' + cell.cat.id + '_' + cell.item.key + '_' + pointIndex"
+                                                                           :value="point"
+                                                                           :placeholder="pointIndex === getTableCellInputPoints(cell.item.text).length - 1 ? `直接輸入下一點...` : `第 ${pointIndex + 1} 點...`"
+                                                                           @input="updateTableCellPoint(cell.cat.id, cell.item, pointIndex, $event.target.value)"
+                                                                           @blur="cleanupTableCellPoints(cell.cat.id, cell.item)"
+                                                                           @keydown.enter.prevent="focusNextTableCellPoint(cell.cat.id, cell.item, pointIndex)">
+                                                                    <button v-if="point.trim() !== ''" class="icon-btn btn-del" style="width:32px;height:32px;font-size:1rem;"
+                                                                            @click="removeTableCellPoint(cell.cat.id, cell.item, pointIndex)"
+                                                                            tabindex="-1" title="刪除此點">🗑️</button>
+                                                                    <span v-else style="width:32px;height:32px;flex-shrink:0;"></span>
+                                                                </div>
+                                                                <div class="table-point-hint">直接打字就會自動新增並儲存；按 Enter 可跳到下一點。</div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </template>
+                                                <div v-else class="student-activity-waiting" style="margin:0;">正在建立這個對應欄位...</div>
+                                            </div>
                                         </div>
                                     </div>
-                                </template>
+                                </section>
+                            </div>
+
+                            <div class="student-activity-add-bar">
+                                <button class="student-activity-add-btn" @click="addTableRow">
+                                    ＋ 新增下一個 {{ roomCategories[0].name }}
+                                </button>
                             </div>
                         </template>
 
@@ -1549,6 +1633,28 @@
                         return this.roomCategories.slice(0, count);
                     }
                     return this.roomCategories;
+                },
+                // 表格化學生端：把「第一分點的一列」整理成一張獨立填寫卡。
+                // 例如 活動階段=兩兩對練，卡片內直接向下填 目的→規則→執行細節。
+                studentTableRows() {
+                    if (!this.tableModeEnabled || !this.roomCategories || this.roomCategories.length < 2) return [];
+                    const primaryCat = this.roomCategories[0];
+                    const counts = this.roomCategories.map(cat => ((this.groupData && this.groupData[cat.id]) || []).length);
+                    const rowCount = Math.max(0, ...counts);
+                    const visibleDetailCats = (this.visibleRoomCategories || []).filter(cat => cat.id !== primaryCat.id);
+
+                    const rows = [];
+                    for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+                        rows.push({
+                            rowIndex,
+                            primaryItem: ((this.groupData && this.groupData[primaryCat.id]) || [])[rowIndex] || null,
+                            detailCells: visibleDetailCats.map(cat => ({
+                                cat,
+                                item: ((this.groupData && this.groupData[cat.id]) || [])[rowIndex] || null
+                            }))
+                        });
+                    }
+                    return rows;
                 },
                 floatingBtnStyle() {
                     if (this.floatingBtnX === null || this.floatingBtnY === null) {
