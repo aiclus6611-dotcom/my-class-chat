@@ -201,6 +201,7 @@
             background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; font-weight: bold;
             line-height: 1.35; box-sizing: border-box; word-break: break-word;
         }
+        /* 表格儲存格內的內容仍以同一格為單位，但每一個論點獨立分點顯示／編輯 */
         .table-cell-textarea {
             flex: 1; min-height: 64px; padding: 10px 12px; font-size: 1.05rem; font-family: inherit;
             border: 1px solid #d7dee8; border-radius: 6px; box-sizing: border-box; resize: vertical;
@@ -210,7 +211,48 @@
         .readonly-table-cell {
             flex: 1; min-height: 64px; padding: 10px 12px; border-radius: 6px;
             background:#f8fafc; border:1px solid #e2e8f0; color:#475569; box-sizing:border-box;
-            white-space:pre-wrap; word-break:break-word;
+            word-break:break-word;
+        }
+        .table-cell-bullets {
+            margin: 0; padding-left: 1.35em; list-style: disc; white-space: normal;
+        }
+        .table-cell-bullets li {
+            margin: 0 0 5px 0; padding-left: 2px; line-height: 1.45; white-space: normal; word-break: break-word;
+        }
+        .table-cell-bullets li:last-child { margin-bottom: 0; }
+        .student-cell-points-wrap {
+            flex: 1; display: flex; align-items: flex-start; min-width: 0;
+        }
+        .table-points-editor {
+            flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid #d7dee8; border-radius: 7px;
+            background: #fff; box-sizing: border-box;
+        }
+        .table-point-edit-row,
+        .table-point-draft-row {
+            display: flex; align-items: center; gap: 6px; margin-bottom: 7px;
+        }
+        .table-point-edit-row:last-of-type { margin-bottom: 7px; }
+        .table-point-edit-row .row-bullet,
+        .table-point-draft-row .row-bullet {
+            margin-right: 2px; flex-shrink: 0; font-size: 1.15rem;
+        }
+        .table-point-input {
+            min-width: 0; padding: 9px 10px; font-size: 1.02rem;
+        }
+        .table-point-draft-row {
+            margin: 3px 0 0; padding-top: 7px; border-top: 1px dashed #dbe4ee;
+        }
+        .table-point-draft-input {
+            background: #f8fbff; border-style: dashed;
+        }
+        .table-point-add-btn {
+            width: 38px; height: 38px; flex-shrink: 0; border: 1px solid #90caf9; border-radius: 50%;
+            background: #e3f2fd; color: #1976d2; cursor: pointer; font-weight: bold; font-size: 1.15rem;
+        }
+        .table-point-add-btn:hover:not(:disabled) { background: #bbdefb; }
+        .table-point-add-btn:disabled { opacity: .4; cursor: default; }
+        .table-point-hint {
+            margin: 5px 0 0 28px; color: #94a3b8; font-size: .78rem;
         }
 
         /* 全螢幕單組海報檢視：可滾輪縮放、拖曳平移、雙擊重新置中 */
@@ -478,9 +520,10 @@
                                                                       class="author-tag-teacher cell-author">
                                                                     第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
                                                                 </span>
-                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
-                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '—' }}
-                                                                </span>
+                                                                <ul v-if="getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text).length > 0" class="table-cell-bullets">
+                                                                    <li v-for="(point, pointIndex) in getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text)" :key="pointIndex">{{ point }}</li>
+                                                                </ul>
+                                                                <span v-else class="empty-cell">—</span>
                                                             </td>
                                                         </template>
                                                     </tr>
@@ -500,9 +543,10 @@
                                                                       class="author-tag-teacher cell-author">
                                                                     第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
                                                                 </span>
-                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
-                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '—' }}
-                                                                </span>
+                                                                <ul v-if="getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text).length > 0" class="table-cell-bullets">
+                                                                    <li v-for="(point, pointIndex) in getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text)" :key="pointIndex">{{ point }}</li>
+                                                                </ul>
+                                                                <span v-else class="empty-cell">—</span>
                                                             </td>
                                                         </template>
                                                     </tr>
@@ -641,9 +685,10 @@
                                                               class="author-tag-teacher cell-author">
                                                             第{{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup }}組
                                                         </span>
-                                                        <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text }">
-                                                            {{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text || '（尚未填寫）' }}
-                                                        </span>
+                                                        <ul v-if="getTableCellPoints(getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text).length > 0" class="table-cell-bullets">
+                                                            <li v-for="(point, pointIndex) in getTableCellPoints(getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text)" :key="pointIndex">{{ point }}</li>
+                                                        </ul>
+                                                        <span v-else class="empty-cell">（尚未填寫）</span>
                                                     </td>
                                                 </template>
                                             </tr>
@@ -669,9 +714,10 @@
                                                               class="author-tag-teacher cell-author">
                                                             第{{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup }}組
                                                         </span>
-                                                        <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text }">
-                                                            {{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text || '（尚未填寫）' }}
-                                                        </span>
+                                                        <ul v-if="getTableCellPoints(getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text).length > 0" class="table-cell-bullets">
+                                                            <li v-for="(point, pointIndex) in getTableCellPoints(getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text)" :key="pointIndex">{{ point }}</li>
+                                                        </ul>
+                                                        <span v-else class="empty-cell">（尚未填寫）</span>
                                                     </td>
                                                 </template>
                                             </tr>
@@ -863,17 +909,46 @@
                                             <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup && item.text.trim() !== ''">
                                                 <div class="readonly-table-cell">
                                                     <span class="author-tag">第 {{item.authorGroup}} 組</span>
-                                                    <span>{{ item.text }}</span>
+                                                    <ul v-if="getTableCellPoints(item.text).length > 0" class="table-cell-bullets" style="margin-top:7px;">
+                                                        <li v-for="(point, pointIndex) in getTableCellPoints(item.text)" :key="pointIndex">{{ point }}</li>
+                                                    </ul>
+                                                    <span v-else class="empty-text">（尚未填寫）</span>
                                                 </div>
                                             </template>
 
                                             <template v-else>
-                                                <div style="flex:1; display:flex; align-items:flex-start;">
+                                                <div class="student-cell-points-wrap">
                                                     <span v-if="enableRotation && item.authorGroup === currentGroup" class="author-tag author-tag-self" style="margin-top:7px;">第 {{currentGroup}} 組</span>
-                                                    <textarea class="table-cell-textarea"
-                                                              v-model="item.text"
-                                                              :placeholder="`填寫「${getStudentPrimaryText(rowIndex) || `第 ${rowIndex + 1} 項`}」對應的${cat.name}...`"
-                                                              @input="updateItem(cat.id, item)"></textarea>
+                                                    <div class="table-points-editor">
+                                                        <div v-for="(point, pointIndex) in getTableCellEditorPoints(item.text)"
+                                                             :key="pointIndex" class="table-point-edit-row">
+                                                            <span class="row-bullet">●</span>
+                                                            <input type="text" class="row-input table-point-input"
+                                                                   :value="point"
+                                                                   :placeholder="`第 ${pointIndex + 1} 點...`"
+                                                                   @input="updateTableCellPoint(cat.id, item, pointIndex, $event.target.value)"
+                                                                   @blur="cleanupTableCellPoints(cat.id, item)"
+                                                                   @keydown.enter.prevent="focusTableCellDraft(cat.id, item)">
+                                                            <button class="icon-btn btn-del" style="width:32px;height:32px;font-size:1rem;"
+                                                                    @click="removeTableCellPoint(cat.id, item, pointIndex)"
+                                                                    tabindex="-1" title="刪除此點">🗑️</button>
+                                                        </div>
+
+                                                        <div class="table-point-draft-row">
+                                                            <span class="row-bullet">●</span>
+                                                            <input type="text" class="row-input table-point-input table-point-draft-input"
+                                                                   :ref="'tableDraft_' + cat.id + '_' + item.key"
+                                                                   :value="tableCellDrafts[getTableCellDraftKey(cat.id, item)] || ''"
+                                                                   :placeholder="`新增「${getStudentPrimaryText(rowIndex) || `第 ${rowIndex + 1} 項`}」的${cat.name}論點...`"
+                                                                   @input="setTableCellDraft(cat.id, item, $event.target.value)"
+                                                                   @keydown.enter.prevent="commitTableCellDraft(cat.id, item)">
+                                                            <button class="table-point-add-btn"
+                                                                    :disabled="!(tableCellDrafts[getTableCellDraftKey(cat.id, item)] || '').trim()"
+                                                                    @click="commitTableCellDraft(cat.id, item)"
+                                                                    title="新增此點">＋</button>
+                                                        </div>
+                                                        <div class="table-point-hint">每一點都只會留在目前這一格內；按 Enter 或「＋」新增下一點。</div>
+                                                    </div>
                                                 </div>
                                             </template>
                                         </div>
@@ -1062,9 +1137,10 @@
                                                                       class="author-tag-teacher cell-author">
                                                                     第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
                                                                 </span>
-                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
-                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '（尚未填寫）' }}
-                                                                </span>
+                                                                <ul v-if="getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text).length > 0" class="table-cell-bullets">
+                                                                    <li v-for="(point, pointIndex) in getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text)" :key="pointIndex">{{ point }}</li>
+                                                                </ul>
+                                                                <span v-else class="empty-cell">（尚未填寫）</span>
                                                             </td>
                                                         </template>
                                                     </tr>
@@ -1084,9 +1160,10 @@
                                                                       class="author-tag-teacher cell-author">
                                                                     第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
                                                                 </span>
-                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
-                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '（尚未填寫）' }}
-                                                                </span>
+                                                                <ul v-if="getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text).length > 0" class="table-cell-bullets">
+                                                                    <li v-for="(point, pointIndex) in getTableCellPoints(getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text)" :key="pointIndex">{{ point }}</li>
+                                                                </ul>
+                                                                <span v-else class="empty-cell">（尚未填寫）</span>
                                                             </td>
                                                         </template>
                                                     </tr>
@@ -1423,6 +1500,7 @@
                     tableModeEnabled: false,
                     tempTableModeEnabled: false,
                     tableShapeSyncing: false,
+                    tableCellDrafts: {},
                     focusedGroup: null,
 
                     // 單組全螢幕海報的縮放 / 平移狀態
@@ -1810,6 +1888,7 @@
                     this.isLoading = true;
                     this.groupData = {};
                     this.orphanedData = [];
+                    this.tableCellDrafts = {};
 
                     db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}`).on('value', (snapshot) => {
                         const val = snapshot.val() || {};
@@ -2107,6 +2186,67 @@
                     } else {
                         this.focusTouchMode = null;
                     }
+                },
+
+                // 表格儲存格內的分點工具：資料仍存在同一格的 text 中，以換行作為分點分隔。
+                // 這樣不會破壞「列 × 欄」的對應關係，也能相容舊版已輸入的多行文字。
+                getTableCellEditorPoints(text) {
+                    if (typeof text !== 'string' || text === '') return [];
+                    return text.replace(/\r/g, '').split('\n');
+                },
+                getTableCellPoints(text) {
+                    return this.getTableCellEditorPoints(text)
+                        .map(point => (point || '').trim())
+                        .filter(point => point !== '');
+                },
+                getTableCellDraftKey(catId, item) {
+                    return `${catId}__${item && item.key ? item.key : 'unknown'}`;
+                },
+                setTableCellDraft(catId, item, value) {
+                    this.tableCellDrafts[this.getTableCellDraftKey(catId, item)] = value;
+                },
+                updateTableCellPoint(catId, item, pointIndex, value) {
+                    const points = this.getTableCellEditorPoints(item.text);
+                    while (points.length <= pointIndex) points.push('');
+                    points[pointIndex] = value;
+                    item.text = points.join('\n');
+                    this.updateItem(catId, item);
+                },
+                cleanupTableCellPoints(catId, item) {
+                    const cleaned = this.getTableCellEditorPoints(item.text)
+                        .map(point => (point || '').trim())
+                        .filter(point => point !== '');
+                    const newText = cleaned.join('\n');
+                    if (newText !== item.text) {
+                        item.text = newText;
+                        this.updateItem(catId, item);
+                    }
+                },
+                removeTableCellPoint(catId, item, pointIndex) {
+                    const points = this.getTableCellEditorPoints(item.text);
+                    if (pointIndex < 0 || pointIndex >= points.length) return;
+                    points.splice(pointIndex, 1);
+                    item.text = points.filter(point => (point || '').trim() !== '').join('\n');
+                    this.updateItem(catId, item);
+                },
+                commitTableCellDraft(catId, item) {
+                    const key = this.getTableCellDraftKey(catId, item);
+                    const draft = (this.tableCellDrafts[key] || '').trim();
+                    if (!draft) return;
+                    const points = this.getTableCellPoints(item.text);
+                    points.push(draft);
+                    item.text = points.join('\n');
+                    this.tableCellDrafts[key] = '';
+                    this.updateItem(catId, item);
+                    this.$nextTick(() => this.focusTableCellDraft(catId, item));
+                },
+                focusTableCellDraft(catId, item) {
+                    this.$nextTick(() => {
+                        const refName = 'tableDraft_' + catId + '_' + item.key;
+                        let el = this.$refs[refName];
+                        if (Array.isArray(el)) el = el[0];
+                        if (el && typeof el.focus === 'function') el.focus();
+                    });
                 },
 
                 // 表格化學生端：取得第一分點同列文字
