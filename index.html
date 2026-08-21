@@ -124,11 +124,11 @@
         .author-tag-teacher { font-size: 0.75rem; background: #e0e7ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-weight: bold; white-space: nowrap; margin-right: 6px; border: 1px solid #c7d2fe; display: inline-block; vertical-align: text-bottom;}
 
         /* --- 老師畫面 --- */
-        .teacher-grid { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 20px; transition: 0.3s; }
+        .teacher-grid { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 20px; transition: 0.3s; }
         @media (max-width: 1024px) { .teacher-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 768px) { .teacher-grid { grid-template-columns: 1fr; } }
         
-        .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; display:flex; flex-direction: column;}
+        .group-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 200px; min-width: 0; display:flex; flex-direction: column;}
         .group-card.overview-card { cursor: zoom-in; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; border: 1px solid transparent; }
         .group-card.overview-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(15,23,42,0.12); border-color: #bfdbfe; }
         .group-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: #1976d2; font-size:1.2rem; }
@@ -136,6 +136,36 @@
         .card-header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
         .btn-focus-small { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: bold; }
         .btn-focus-small:hover { background: #dbeafe; }
+
+        /* 每列 5～6 組時：標題與操作鈕改為上下配置，避免卡片被按鈕擠窄而逐字換行 */
+        .teacher-grid.dense-grid .card-header-flex {
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 8px;
+        }
+        .teacher-grid.dense-grid .card-header-flex > span {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            white-space: nowrap;
+            line-height: 1.3;
+        }
+        .teacher-grid.dense-grid .card-header-actions {
+            width: 100%;
+            min-width: 0;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .teacher-grid.dense-grid .btn-focus-small,
+        .teacher-grid.dense-grid .btn-copy-small {
+            flex: 0 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            font-size: 0.72rem;
+            padding: 4px 6px;
+        }
 
         /* 講師分點呈現：直式列表 / 橫式欄位 */
         .teacher-grid.horizontal-overview { grid-template-columns: 1fr !important; }
@@ -1158,7 +1188,10 @@
                     <!-- 單組放大已改為最上層全螢幕海報浮層 -->
 
                     <!-- 講師總覽：點任一組即可放大 -->
-                    <div v-if="!focusedGroup" class="teacher-grid" :class="{ 'horizontal-overview': (teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0) || tableModeEnabled }" :style="{ '--cols': columnsPerRow }">
+                    <div v-if="!focusedGroup" class="teacher-grid" :class="{
+                        'horizontal-overview': (teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0) || tableModeEnabled,
+                        'dense-grid': columnsPerRow >= 5 && !((teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0) || tableModeEnabled)
+                    }" :style="{ '--cols': columnsPerRow }">
                         <div v-for="i in groupCount" :key="i" class="group-card overview-card" @click="openGroupFocus(i)" title="點擊放大檢視本組">
                             <h3 style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
                                 <div class="card-header-flex">
