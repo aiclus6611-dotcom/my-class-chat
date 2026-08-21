@@ -156,17 +156,122 @@
         .teacher-category-column ul { padding-left: 20px; margin: 8px 0 0; }
         .teacher-category-column li { margin-bottom: 8px; line-height: 1.5; word-break: break-word; }
 
-        /* 單組放大檢視 */
-        .group-focus-panel {
-            background: white; border-radius: 12px; box-shadow: 0 8px 28px rgba(15,23,42,0.12);
-            border: 2px solid #bfdbfe; padding: 22px; box-sizing: border-box;
+        /* 表格化討論：第一個分點作為主項目，後續分點依列對應 */
+        .discussion-table-wrap {
+            width: 100%; overflow: auto; border: 1px solid #cbd5e1; border-radius: 9px;
+            background: white; box-sizing: border-box;
         }
-        .group-focus-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-        .group-focus-title { font-size:1.45rem; font-weight:bold; color:#1976d2; }
+        .discussion-table {
+            border-collapse: separate; border-spacing: 0; width: 100%; min-width: max-content;
+            color: #1e293b; background: white;
+        }
+        .discussion-table th, .discussion-table td {
+            padding: 11px 13px; border-right: 1px solid #dbe4ee; border-bottom: 1px solid #dbe4ee;
+            vertical-align: top; text-align: left; min-width: 170px; line-height: 1.5;
+            white-space: pre-wrap; word-break: break-word; box-sizing: border-box;
+        }
+        .discussion-table tr:last-child > * { border-bottom: none; }
+        .discussion-table tr > *:last-child { border-right: none; }
+        .discussion-table thead th {
+            background: #eff6ff; color: #1d4ed8; font-weight: 800; position: relative;
+        }
+        .discussion-table .primary-head,
+        .discussion-table .primary-cell {
+            background: #fff7ed; color: #c2410c; font-weight: 800;
+        }
+        .discussion-table .transpose-label {
+            background: #eff6ff; color: #1d4ed8; font-weight: 800; min-width: 150px;
+        }
+        .discussion-table .empty-cell { color: #94a3b8; font-style: italic; }
+        .discussion-table .cell-author { display:block; margin-bottom:5px; }
+        .table-orphan-box {
+            margin-top: 12px; padding: 10px 12px; border: 1px dashed #fdba74; border-radius: 8px;
+            background: #fff7ed;
+        }
+        .table-orphan-title { color:#c2410c; font-weight:bold; margin-bottom:6px; }
+        .table-orphan-box ul { margin: 0; padding-left: 22px; }
+
+        /* 學員表格化填寫仍維持「海報式」由上往下，但每一列會明確對應第一分點 */
+        .table-mode-hint {
+            margin: -4px 0 14px; padding: 10px 12px; border-radius: 8px;
+            background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: .92rem;
+        }
+        .student-table-ref {
+            width: 150px; flex-shrink: 0; padding: 8px 10px; margin-right: 10px; border-radius: 6px;
+            background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; font-weight: bold;
+            line-height: 1.35; box-sizing: border-box; word-break: break-word;
+        }
+        .table-cell-textarea {
+            flex: 1; min-height: 64px; padding: 10px 12px; font-size: 1.05rem; font-family: inherit;
+            border: 1px solid #d7dee8; border-radius: 6px; box-sizing: border-box; resize: vertical;
+            outline: none; line-height: 1.45;
+        }
+        .table-cell-textarea:focus { border-color:#1976d2; box-shadow:0 0 0 3px rgba(25,118,210,.08); }
+        .readonly-table-cell {
+            flex: 1; min-height: 64px; padding: 10px 12px; border-radius: 6px;
+            background:#f8fafc; border:1px solid #e2e8f0; color:#475569; box-sizing:border-box;
+            white-space:pre-wrap; word-break:break-word;
+        }
+
+        /* 全螢幕單組海報檢視：可滾輪縮放、拖曳平移、雙擊重新置中 */
+        .group-focus-overlay {
+            position: fixed; inset: 0; z-index: 12000; background: #e9eef5; overflow: hidden;
+            user-select: none;
+        }
+        .group-focus-stage {
+            position:absolute; inset:0; overflow:hidden; cursor:grab; touch-action:none;
+            background-image:
+                linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .group-focus-stage.panning { cursor:grabbing; }
+        .group-focus-toolbar {
+            position: fixed; top: 14px; left: 14px; z-index: 12010;
+            display:flex; align-items:center; gap:8px; padding:7px;
+            background: rgba(15,23,42,.88); border-radius: 11px;
+            box-shadow: 0 7px 20px rgba(15,23,42,.22); backdrop-filter: blur(6px);
+        }
+        .focus-back-btn {
+            width: 42px; height: 42px; border-radius: 8px; border: 1px solid #475569;
+            background:#1e293b; color:white; cursor:pointer; font-size:1.35rem; font-weight:bold;
+        }
+        .focus-back-btn:hover { background:#334155; }
+        .focus-mode-btn {
+            height:42px; border-radius:8px; border:1px solid #64748b; background:#334155;
+            color:#e2e8f0; padding:0 13px; cursor:pointer; font-weight:bold;
+        }
+        .focus-mode-btn.active { background:#0284c7; color:white; border-color:#38bdf8; }
+        .group-focus-poster {
+            position:absolute; top:0; left:0; transform-origin: 0 0;
+            background:white; border-radius: 5px; box-shadow: 0 18px 50px rgba(15,23,42,.25);
+            padding: 34px 38px 42px; box-sizing:border-box; min-width:1100px; min-height:650px;
+            width:max-content; max-width:none;
+        }
+        .focus-poster-head {
+            display:flex; justify-content:space-between; align-items:flex-start; gap:24px;
+            border-bottom: 3px solid #e2e8f0; padding-bottom:16px; margin-bottom:18px;
+        }
+        .focus-poster-title { margin:0; color:#0f172a; font-size:2rem; line-height:1.25; }
+        .focus-poster-room { color:#64748b; margin-top:6px; font-size:1rem; }
+        .focus-poster-content { min-width:1020px; font-size:1.08rem; }
+        .focus-poster-content .discussion-table th,
+        .focus-poster-content .discussion-table td { min-width:220px; padding:15px 17px; font-size:1.08rem; }
+        .focus-poster-content .teacher-category-grid { min-width:1000px; }
+        .focus-poster-content .teacher-category-column { min-width:220px; }
+        .focus-poster-content .category-block { min-width:920px; }
+
         .display-mode-switch { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
         .display-mode-switch .mode-label { color:#64748b; font-size:0.92rem; font-weight:bold; }
         .mode-btn { border:1px solid #cbd5e1; background:#fff; color:#475569; border-radius:7px; padding:7px 11px; cursor:pointer; font-weight:bold; }
         .mode-btn.active { background:#1976d2; color:#fff; border-color:#1976d2; }
+
+        @media (max-width: 700px) {
+            .group-focus-toolbar { top:8px; left:8px; }
+            .focus-mode-btn { padding:0 9px; font-size:.88rem; }
+            .group-focus-poster { min-width:900px; }
+            .student-table-ref { width:110px; }
+        }
         
         /* 修改此處：增加 white-space: pre-wrap 讓題目換行生效 */
         .teacher-group-topic { background: #eef2ff; color: #3730a3; padding: 8px 10px; border-radius: 6px; font-size: 0.95rem; margin-bottom: 15px; border: 1px solid #c7d2fe; font-weight: bold; white-space: pre-wrap; word-wrap: break-word; }
@@ -286,6 +391,10 @@
         .proj-column-item {
             background:white; border:1px solid #e2e8f0; padding:6px 8px; border-radius:6px; line-height:1.35; color:#334155; word-break:break-word;
         }
+        .projection-card .discussion-table { min-width:100%; width:100%; table-layout:fixed; }
+        .projection-card .discussion-table th,
+        .projection-card .discussion-table td { min-width:0; padding:7px 8px; font-size:.92em; }
+        .projection-card .discussion-table-wrap { border-radius:6px; overflow:hidden; }
     </style>
 </head>
 <body>
@@ -309,9 +418,9 @@
                 <h2 style="margin:0; font-size: 1.5rem;">📺 學員討論投影畫面：{{ currentRoomName }}</h2>
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
                     <div v-if="roomCategories && roomCategories.length > 0" class="projection-display-switch">
-                        <span>分點呈現：</span>
-                        <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">☰ 直式</button>
-                        <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">▦ 橫式</button>
+                        <span>{{ tableModeEnabled ? '表格方向：' : '分點呈現：' }}</span>
+                        <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">↕ 直式</button>
+                        <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">↔ 橫式</button>
                     </div>
                     <button class="btn btn-gray" style="margin:0;" @click="showProjectionHeader = false">⬆ 隱藏控制列</button>
                     <button class="btn btn-red" style="margin:0;" @click="showProjection = false">✖ 關閉投影模式</button>
@@ -342,42 +451,276 @@
                         <div class="projection-card-content" :ref="'projWrapper_' + i">
                             <div class="projection-inner" :ref="'projInner_' + i">
                                 <template v-if="hasData(getDisplayBoardId(i))">
-                                    <!-- 橫式：分點橫向成欄，每欄內容向下排列 -->
-                                    <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
-                                         class="projection-category-grid"
-                                         :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(i)).length) }">
-                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="projection-category-column">
-                                            <div v-if="block.title" class="cat-title" style="margin-bottom:8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
-                                                {{ block.title }}
-                                            </div>
-                                            <div v-if="block.lines.length > 0" class="proj-column-items">
-                                                <div class="proj-column-item" v-for="(line, k) in block.lines" :key="k">
-                                                    <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
-                                                    {{ line.text }}
-                                                </div>
-                                            </div>
-                                            <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
-                                        </div>
-                                    </div>
+                                    <!-- 表格化：橫式為一般表格，直式為轉置表格 -->
+                                    <template v-if="tableModeEnabled && roomCategories && roomCategories.length > 1">
+                                        <div class="discussion-table-wrap">
+                                            <table v-if="teacherDisplayMode === 'horizontal'" class="discussion-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id"
+                                                            :class="{ 'primary-head': catIndex === 0 }">{{ cat.name }}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="rowNum in getTableRowCount(getDisplayBoardId(i))" :key="rowNum">
+                                                        <template v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id">
+                                                            <th v-if="catIndex === 0" class="primary-cell">
+                                                                <span v-if="enableRotation && getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup"
+                                                                      class="author-tag-teacher cell-author">
+                                                                    第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
+                                                                </span>
+                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
+                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '—' }}
+                                                                </span>
+                                                            </th>
+                                                            <td v-else>
+                                                                <span v-if="enableRotation && getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup"
+                                                                      class="author-tag-teacher cell-author">
+                                                                    第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
+                                                                </span>
+                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
+                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '—' }}
+                                                                </span>
+                                                            </td>
+                                                        </template>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
 
-                                    <!-- 直式：維持原本由上往下的分點列表 -->
-                                    <template v-else>
-                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="proj-category-block">
-                                            <div v-if="block.title" class="cat-title" style="margin-bottom: 8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
-                                                {{ block.title }}
-                                            </div>
-                                            <div v-if="block.lines.length > 0" class="proj-inline-container">
-                                                <span class="proj-inline-item" v-for="(line, k) in block.lines" :key="k">
-                                                    {{ line.text }}
-                                                </span>
-                                            </div>
-                                            <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
+                                            <table v-else class="discussion-table">
+                                                <tbody>
+                                                    <tr v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id">
+                                                        <th class="transpose-label">{{ cat.name }}</th>
+                                                        <template v-for="rowNum in getTableRowCount(getDisplayBoardId(i))" :key="rowNum">
+                                                            <th v-if="catIndex === 0" class="primary-head">
+                                                                {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || `第 ${rowNum} 項` }}
+                                                            </th>
+                                                            <td v-else>
+                                                                <span v-if="enableRotation && getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup"
+                                                                      class="author-tag-teacher cell-author">
+                                                                    第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
+                                                                </span>
+                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
+                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '—' }}
+                                                                </span>
+                                                            </td>
+                                                        </template>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
+                                        <div v-if="getTableOrphanedLines(getDisplayBoardId(i)).length > 0" class="table-orphan-box">
+                                            <div class="table-orphan-title">⚠️ 未分類論點</div>
+                                            <ul>
+                                                <li v-for="(line, k) in getTableOrphanedLines(getDisplayBoardId(i))" :key="k">{{ line.text }}</li>
+                                            </ul>
+                                        </div>
+                                    </template>
+
+                                    <!-- 非表格模式：保留原本的分欄 / 列表 -->
+                                    <template v-else>
+                                        <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
+                                             class="projection-category-grid"
+                                             :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(i)).length) }">
+                                            <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="projection-category-column">
+                                                <div v-if="block.title" class="cat-title" style="margin-bottom:8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                                    {{ block.title }}
+                                                </div>
+                                                <div v-if="block.lines.length > 0" class="proj-column-items">
+                                                    <div class="proj-column-item" v-for="(line, k) in block.lines" :key="k">
+                                                        <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                        {{ line.text }}
+                                                    </div>
+                                                </div>
+                                                <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
+                                            </div>
+                                        </div>
+                                        <template v-else>
+                                            <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="proj-category-block">
+                                                <div v-if="block.title" class="cat-title" style="margin-bottom: 8px;" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                                    {{ block.title }}
+                                                </div>
+                                                <div v-if="block.lines.length > 0" class="proj-inline-container">
+                                                    <span class="proj-inline-item" v-for="(line, k) in block.lines" :key="k">
+                                                        {{ line.text }}
+                                                    </span>
+                                                </div>
+                                                <p v-else class="empty-text" style="margin-top:0;">(尚無內容)</p>
+                                            </div>
+                                        </template>
                                     </template>
                                 </template>
                                 <p v-else class="empty-text">尚無內容...</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 講師單組：真正全畫面海報檢視。滾輪縮放、拖曳平移，雙擊可重新適合畫面 -->
+        <div v-if="focusedGroup && isTeacher" class="group-focus-overlay">
+            <div class="group-focus-toolbar" @mousedown.stop @touchstart.stop @wheel.stop>
+                <button class="focus-back-btn" @click="closeGroupFocus" title="返回講師總覽">←</button>
+                <template v-if="roomCategories && roomCategories.length > 0">
+                    <button class="focus-mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }"
+                            @click="setTeacherDisplayMode('vertical')">
+                        ↕ 直式
+                    </button>
+                    <button class="focus-mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }"
+                            @click="setTeacherDisplayMode('horizontal')">
+                        ↔ 橫式
+                    </button>
+                </template>
+            </div>
+
+            <div ref="focusStage"
+                 class="group-focus-stage"
+                 :class="{ panning: focusPanning }"
+                 title="拖曳移動海報；滑鼠滾輪縮放；雙擊重新適合畫面"
+                 @wheel.prevent="onFocusWheel"
+                 @mousedown="startFocusPan"
+                 @dblclick="fitFocusView"
+                 @touchstart.prevent="startFocusTouch"
+                 @touchmove.prevent="moveFocusTouch"
+                 @touchend.prevent="endFocusTouch"
+                 @touchcancel.prevent="endFocusTouch">
+                <div ref="focusPoster" class="group-focus-poster" :style="focusPosterStyle">
+                    <div class="focus-poster-head">
+                        <div>
+                            <h2 class="focus-poster-title">
+                                <span v-if="enableRotation && rotationMode === 'student'">第 {{ focusedGroup }} 組學員位置</span>
+                                <span v-else>第 {{ focusedGroup }} 組主題板</span>
+                            </h2>
+                            <div class="focus-poster-room">{{ currentRoomName }}</div>
+                        </div>
+                        <div v-if="currentRound > 0" style="background:#fef3c7; color:#b45309; padding:8px 11px; border-radius:7px; border:1px solid #fde68a; font-size:.95rem;">
+                            <template v-if="rotationMode === 'student'">
+                                正在討論第 {{ getDisplayBoardId(focusedGroup) }} 組主題板
+                            </template>
+                            <template v-else>
+                                目前由第 {{ getDisplayWriterId(focusedGroup) }} 組填寫
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="focus-poster-content">
+                        <div v-if="groupTopics && groupTopics[getDisplayBoardId(focusedGroup)]"
+                             class="teacher-group-topic"
+                             style="font-size:1.08rem; padding:12px 14px;">
+                            🎯 題目：{{ groupTopics[getDisplayBoardId(focusedGroup)] }}
+                        </div>
+
+                        <template v-if="hasData(getDisplayBoardId(focusedGroup))">
+                            <!-- 表格化模式：橫式=一般表格；直式=完整轉置 -->
+                            <template v-if="tableModeEnabled && roomCategories && roomCategories.length > 1">
+                                <div class="discussion-table-wrap">
+                                    <table v-if="teacherDisplayMode === 'horizontal'" class="discussion-table">
+                                        <thead>
+                                            <tr>
+                                                <th v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id"
+                                                    :class="{ 'primary-head': catIndex === 0 }">
+                                                    {{ cat.name }}
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="rowNum in getTableRowCount(getDisplayBoardId(focusedGroup))" :key="rowNum">
+                                                <template v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id">
+                                                    <th v-if="catIndex === 0" class="primary-cell">
+                                                        <span v-if="enableRotation && getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup"
+                                                              class="author-tag-teacher cell-author">
+                                                            第{{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup }}組
+                                                        </span>
+                                                        <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text }">
+                                                            {{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text || '（尚未填寫）' }}
+                                                        </span>
+                                                    </th>
+                                                    <td v-else>
+                                                        <span v-if="enableRotation && getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup"
+                                                              class="author-tag-teacher cell-author">
+                                                            第{{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup }}組
+                                                        </span>
+                                                        <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text }">
+                                                            {{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text || '（尚未填寫）' }}
+                                                        </span>
+                                                    </td>
+                                                </template>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <table v-else class="discussion-table">
+                                        <tbody>
+                                            <tr v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id">
+                                                <th class="transpose-label">{{ cat.name }}</th>
+                                                <template v-for="rowNum in getTableRowCount(getDisplayBoardId(focusedGroup))" :key="rowNum">
+                                                    <th v-if="catIndex === 0" class="primary-head">
+                                                        <span v-if="enableRotation && getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup"
+                                                              class="author-tag-teacher cell-author">
+                                                            第{{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup }}組
+                                                        </span>
+                                                        <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text }">
+                                                            {{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text || `第 ${rowNum} 項` }}
+                                                        </span>
+                                                    </th>
+                                                    <td v-else>
+                                                        <span v-if="enableRotation && getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup"
+                                                              class="author-tag-teacher cell-author">
+                                                            第{{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).authorGroup }}組
+                                                        </span>
+                                                        <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text }">
+                                                            {{ getTableCell(getDisplayBoardId(focusedGroup), cat.id, rowNum - 1).text || '（尚未填寫）' }}
+                                                        </span>
+                                                    </td>
+                                                </template>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div v-if="getTableOrphanedLines(getDisplayBoardId(focusedGroup)).length > 0" class="table-orphan-box">
+                                    <div class="table-orphan-title">⚠️ 未分類論點</div>
+                                    <ul>
+                                        <li v-for="(line, k) in getTableOrphanedLines(getDisplayBoardId(focusedGroup))" :key="k">
+                                            <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                            {{ line.text }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </template>
+
+                            <!-- 非表格模式：保留原本直式列表 / 橫式分欄 -->
+                            <template v-else>
+                                <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
+                                     class="teacher-category-grid"
+                                     :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup)).length) }">
+                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup))" :key="bIndex" class="teacher-category-column">
+                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
+                                        <ul v-if="block.lines.length > 0">
+                                            <li v-for="(line, k) in block.lines" :key="k">
+                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                <span>{{ line.text }}</span>
+                                            </li>
+                                        </ul>
+                                        <p v-else class="empty-text" style="margin-top:8px;">(尚無內容)</p>
+                                    </div>
+                                </div>
+                                <template v-else>
+                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup))" :key="bIndex" class="category-block">
+                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
+                                        <ul v-if="block.lines.length > 0">
+                                            <li v-for="(line, k) in block.lines" :key="k">
+                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                <span>{{ line.text }}</span>
+                                            </li>
+                                        </ul>
+                                        <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
+                                    </div>
+                                </template>
+                            </template>
+                        </template>
+                        <p v-else class="empty-text" style="font-size:1.2rem;">尚無內容...</p>
                     </div>
                 </div>
             </div>
@@ -430,7 +773,7 @@
             </div>
 
             <div class="container">
-                <h1 style="margin-top: 30px;">{{ isTeacher ? (focusedGroup ? '單組放大檢視' : '講師總覽看板') : (currentGroup ? '分組討論區' : '請選擇組別') }}</h1>
+                <h1 style="margin-top: 30px;">{{ isTeacher ? '講師總覽看板' : (currentGroup ? '分組討論區' : '請選擇組別') }}</h1>
                 <div class="room-title">📍 當前討論：{{ currentRoomName }}</div>
 
                 <div v-if="!isTeacher && !currentGroup" class="group-selector-container">
@@ -463,50 +806,130 @@
                     </div>
 
                     <div v-if="roomCategories && roomCategories.length > 0">
-                        <div v-for="cat in visibleRoomCategories" :key="cat.id" class="student-cat-box">
-                            <div class="student-cat-title">{{ cat.name }}</div>
-                            <div class="dynamic-input-list">
-                                <transition-group name="list">
-                                    <div v-for="item in (groupData[cat.id] || [])" :key="item.key" class="input-row">
-                                        <span class="row-bullet">●</span>
-                                        
-                                        <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup">
-                                            <div class="readonly-item">
-                                                <span class="author-tag">第 {{item.authorGroup}} 組</span>
-                                                <span>{{ item.text }}</span>
-                                            </div>
-                                        </template>
-                                        
-                                        <template v-else>
-                                            <div style="flex: 1; display: flex; align-items: center;">
-                                                <span v-if="enableRotation" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
-                                                <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
-                                                    @input="updateItem(cat.id, item)" @keydown.enter.prevent="addNewLine(cat.id)">
-                                            </div>
-                                            <button class="icon-btn btn-del" @click="removeItem(cat.id, item.key, item.isLegacy)" tabindex="-1" title="刪除">🗑️</button>
-                                        </template>
-                                    </div>
-                                </transition-group>
+                        <!-- 表格化：學員仍由上往下填寫，但後續分點逐列對應第一個分點 -->
+                        <template v-if="tableModeEnabled && roomCategories.length > 1">
+                            <div class="table-mode-hint">
+                                📋 已開啟表格化對應：先在「{{ roomCategories[0].name }}」建立每一列的主項目；後面的分點會自動依同一列對應。
                             </div>
-                            <div class="add-bar" style="border-top:none; margin-top:0; padding-top:5px;">
-                                <button class="btn-add-small" @click="addNewLine(cat.id)">＋ 新增 {{ cat.name }} 的論點</button>
-                            </div>
-                        </div>
 
+                            <div v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id" class="student-cat-box">
+                                <div class="student-cat-title">
+                                    {{ cat.name }}
+                                    <span v-if="catIndex === 0" style="font-size:.8rem; color:#c2410c; background:#fff7ed; border:1px solid #fed7aa; padding:2px 7px; border-radius:999px; margin-left:6px;">
+                                        表格主項目
+                                    </span>
+                                </div>
+
+                                <!-- 第一個分點：決定表格有幾列 -->
+                                <template v-if="catIndex === 0">
+                                    <div class="dynamic-input-list">
+                                        <transition-group name="list">
+                                            <div v-for="(item, rowIndex) in (groupData[cat.id] || [])" :key="item.key" class="input-row">
+                                                <span class="row-bullet">●</span>
+
+                                                <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup && item.text.trim() !== ''">
+                                                    <div class="readonly-item">
+                                                        <span class="author-tag">第 {{item.authorGroup}} 組</span>
+                                                        <span>{{ item.text }}</span>
+                                                    </div>
+                                                </template>
+
+                                                <template v-else>
+                                                    <div style="flex:1; display:flex; align-items:center;">
+                                                        <span v-if="enableRotation && item.authorGroup === currentGroup" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
+                                                        <input type="text" class="row-input" v-model="item.text"
+                                                               :placeholder="`輸入第 ${rowIndex + 1} 個${cat.name}...`"
+                                                               @input="updateItem(cat.id, item)"
+                                                               @keydown.enter.prevent="addTableRow">
+                                                    </div>
+                                                    <button class="icon-btn btn-del" @click="removeTableRow(rowIndex)" tabindex="-1" title="刪除此整列">🗑️</button>
+                                                </template>
+                                            </div>
+                                        </transition-group>
+                                    </div>
+                                    <div class="add-bar" style="border-top:none; margin-top:0; padding-top:5px;">
+                                        <button class="btn-add-small" @click="addTableRow">＋ 新增一列 {{ cat.name }}</button>
+                                    </div>
+                                </template>
+
+                                <!-- 後續分點：每一格對應第一分點的同一列 -->
+                                <template v-else>
+                                    <div class="dynamic-input-list">
+                                        <div v-for="(item, rowIndex) in (groupData[cat.id] || [])" :key="item.key" class="input-row" style="align-items:stretch;">
+                                            <div class="student-table-ref">
+                                                {{ getStudentPrimaryText(rowIndex) || `第 ${rowIndex + 1} 項` }}
+                                            </div>
+
+                                            <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup && item.text.trim() !== ''">
+                                                <div class="readonly-table-cell">
+                                                    <span class="author-tag">第 {{item.authorGroup}} 組</span>
+                                                    <span>{{ item.text }}</span>
+                                                </div>
+                                            </template>
+
+                                            <template v-else>
+                                                <div style="flex:1; display:flex; align-items:flex-start;">
+                                                    <span v-if="enableRotation && item.authorGroup === currentGroup" class="author-tag author-tag-self" style="margin-top:7px;">第 {{currentGroup}} 組</span>
+                                                    <textarea class="table-cell-textarea"
+                                                              v-model="item.text"
+                                                              :placeholder="`填寫「${getStudentPrimaryText(rowIndex) || `第 ${rowIndex + 1} 項`}」對應的${cat.name}...`"
+                                                              @input="updateItem(cat.id, item)"></textarea>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- 非表格化：維持原本各分點獨立新增論點 -->
+                        <template v-else>
+                            <div v-for="cat in visibleRoomCategories" :key="cat.id" class="student-cat-box">
+                                <div class="student-cat-title">{{ cat.name }}</div>
+                                <div class="dynamic-input-list">
+                                    <transition-group name="list">
+                                        <div v-for="item in (groupData[cat.id] || [])" :key="item.key" class="input-row">
+                                            <span class="row-bullet">●</span>
+
+                                            <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup">
+                                                <div class="readonly-item">
+                                                    <span class="author-tag">第 {{item.authorGroup}} 組</span>
+                                                    <span>{{ item.text }}</span>
+                                                </div>
+                                            </template>
+
+                                            <template v-else>
+                                                <div style="flex: 1; display: flex; align-items: center;">
+                                                    <span v-if="enableRotation" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
+                                                    <input type="text" class="row-input" v-model="item.text" placeholder="輸入想法..."
+                                                        @input="updateItem(cat.id, item)" @keydown.enter.prevent="addNewLine(cat.id)">
+                                                </div>
+                                                <button class="icon-btn btn-del" @click="removeItem(cat.id, item.key, item.isLegacy)" tabindex="-1" title="刪除">🗑️</button>
+                                            </template>
+                                        </div>
+                                    </transition-group>
+                                </div>
+                                <div class="add-bar" style="border-top:none; margin-top:0; padding-top:5px;">
+                                    <button class="btn-add-small" @click="addNewLine(cat.id)">＋ 新增 {{ cat.name }} 的論點</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- 未分類論點仍維持獨立區塊 -->
                         <div v-if="allowUncategorized" class="student-cat-box" style="border-color: #ffcc80; background: #fff8e1;">
                             <div class="student-cat-title" style="color: #ef6c00; border-left-color: #ef6c00;">⚠️ 未分類論點</div>
                             <div class="dynamic-input-list">
                                 <transition-group name="list">
                                     <div v-for="item in orphanedData" :key="item.key" class="input-row">
                                         <span class="row-bullet">●</span>
-                                        
+
                                         <template v-if="enableRotation && item.authorGroup && item.authorGroup !== currentGroup">
                                             <div class="readonly-item">
                                                 <span class="author-tag">第 {{item.authorGroup}} 組</span>
                                                 <span>{{ item.text }}</span>
                                             </div>
                                         </template>
-                                        
+
                                         <template v-else>
                                             <div style="flex: 1; display: flex; align-items: center;">
                                                 <span v-if="enableRotation" class="author-tag author-tag-self">第 {{currentGroup}} 組</span>
@@ -523,7 +946,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div v-else>
                         <div class="dynamic-input-list">
                             <transition-group name="list">
@@ -581,69 +1003,10 @@
                         </div>
                     </div>
 
-                    <!-- 單組放大檢視 -->
-                    <div v-if="focusedGroup" class="group-focus-panel">
-                        <div class="group-focus-toolbar">
-                            <button class="btn btn-gray" style="margin:0;" @click="closeGroupFocus">⬅ 返回總覽</button>
-                            <div class="group-focus-title">
-                                <span v-if="enableRotation && rotationMode === 'student'">第 {{ focusedGroup }} 組學員位置</span>
-                                <span v-else>第 {{ focusedGroup }} 組主題板</span>
-                            </div>
-                            <div v-if="roomCategories && roomCategories.length > 0" class="display-mode-switch">
-                                <span class="mode-label">分點呈現</span>
-                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">☰ 直式</button>
-                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">▦ 橫式</button>
-                            </div>
-                        </div>
-
-                        <div v-if="currentRound > 0" style="background:#fef3c7; color:#d97706; padding:8px 10px; border-radius:6px; font-size:1rem; border:1px solid #fde68a; margin-bottom:12px;">
-                            <template v-if="rotationMode === 'student'">
-                                📝 目前正在討論 <strong>第 {{ getDisplayBoardId(focusedGroup) }} 組</strong> 的主題板
-                            </template>
-                            <template v-else>
-                                📝 目前由 <strong>第 {{ getDisplayWriterId(focusedGroup) }} 組</strong> 填寫中
-                            </template>
-                        </div>
-
-                        <div v-if="groupTopics && groupTopics[getDisplayBoardId(focusedGroup)]" class="teacher-group-topic">
-                            🎯 題目：{{ groupTopics[getDisplayBoardId(focusedGroup)] }}
-                        </div>
-
-                        <div class="group-content">
-                            <template v-if="hasData(getDisplayBoardId(focusedGroup))">
-                                <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
-                                     class="teacher-category-grid"
-                                     :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup)).length) }">
-                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup))" :key="bIndex" class="teacher-category-column">
-                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
-                                        <ul v-if="block.lines.length > 0">
-                                            <li v-for="(line, k) in block.lines" :key="k">
-                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
-                                                <span>{{ line.text }}</span>
-                                            </li>
-                                        </ul>
-                                        <p v-else class="empty-text" style="margin-top:8px;">(尚無內容)</p>
-                                    </div>
-                                </div>
-                                <template v-else>
-                                    <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(focusedGroup))" :key="bIndex" class="category-block">
-                                        <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
-                                        <ul v-if="block.lines.length > 0">
-                                            <li v-for="(line, k) in block.lines" :key="k">
-                                                <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
-                                                <span>{{ line.text }}</span>
-                                            </li>
-                                        </ul>
-                                        <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
-                                    </div>
-                                </template>
-                            </template>
-                            <p v-else class="empty-text">尚無內容...</p>
-                        </div>
-                    </div>
+                    <!-- 單組放大已改為最上層全螢幕海報浮層 -->
 
                     <!-- 講師總覽：點任一組即可放大 -->
-                    <div v-else class="teacher-grid" :class="{ 'horizontal-overview': teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0 }" :style="{ '--cols': columnsPerRow }">
+                    <div v-if="!focusedGroup" class="teacher-grid" :class="{ 'horizontal-overview': (teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0) || tableModeEnabled }" :style="{ '--cols': columnsPerRow }">
                         <div v-for="i in groupCount" :key="i" class="group-card overview-card" @click="openGroupFocus(i)" title="點擊放大檢視本組">
                             <h3 style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
                                 <div class="card-header-flex">
@@ -672,33 +1035,105 @@
 
                             <div class="group-content">
                                 <template v-if="hasData(getDisplayBoardId(i))">
-                                    <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
-                                         class="teacher-category-grid"
-                                         :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(i)).length) }">
-                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="teacher-category-column">
-                                            <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
-                                            <ul v-if="block.lines.length > 0">
-                                                <li v-for="(line, k) in block.lines" :key="k">
+                                    <!-- 表格化：第一分點形成主列/主欄，直式就是完整轉置 -->
+                                    <template v-if="tableModeEnabled && roomCategories && roomCategories.length > 1">
+                                        <div class="discussion-table-wrap">
+                                            <table v-if="teacherDisplayMode === 'horizontal'" class="discussion-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id"
+                                                            :class="{ 'primary-head': catIndex === 0 }">{{ cat.name }}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="rowNum in getTableRowCount(getDisplayBoardId(i))" :key="rowNum">
+                                                        <template v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id">
+                                                            <th v-if="catIndex === 0" class="primary-cell">
+                                                                <span v-if="enableRotation && getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup"
+                                                                      class="author-tag-teacher cell-author">
+                                                                    第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
+                                                                </span>
+                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
+                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '（尚未填寫）' }}
+                                                                </span>
+                                                            </th>
+                                                            <td v-else>
+                                                                <span v-if="enableRotation && getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup"
+                                                                      class="author-tag-teacher cell-author">
+                                                                    第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
+                                                                </span>
+                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
+                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '（尚未填寫）' }}
+                                                                </span>
+                                                            </td>
+                                                        </template>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+
+                                            <table v-else class="discussion-table">
+                                                <tbody>
+                                                    <tr v-for="(cat, catIndex) in visibleRoomCategories" :key="cat.id">
+                                                        <th class="transpose-label">{{ cat.name }}</th>
+                                                        <template v-for="rowNum in getTableRowCount(getDisplayBoardId(i))" :key="rowNum">
+                                                            <th v-if="catIndex === 0" class="primary-head">
+                                                                {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || `第 ${rowNum} 項` }}
+                                                            </th>
+                                                            <td v-else>
+                                                                <span v-if="enableRotation && getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup"
+                                                                      class="author-tag-teacher cell-author">
+                                                                    第{{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).authorGroup }}組
+                                                                </span>
+                                                                <span :class="{ 'empty-cell': !getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text }">
+                                                                    {{ getTableCell(getDisplayBoardId(i), cat.id, rowNum - 1).text || '（尚未填寫）' }}
+                                                                </span>
+                                                            </td>
+                                                        </template>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div v-if="getTableOrphanedLines(getDisplayBoardId(i)).length > 0" class="table-orphan-box">
+                                            <div class="table-orphan-title">⚠️ 未分類論點</div>
+                                            <ul>
+                                                <li v-for="(line, k) in getTableOrphanedLines(getDisplayBoardId(i))" :key="k">
                                                     <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
-                                                    <span>{{ line.text }}</span>
+                                                    {{ line.text }}
                                                 </li>
                                             </ul>
-                                            <p v-else class="empty-text" style="margin-top:8px;">(尚無內容)</p>
                                         </div>
-                                    </div>
+                                    </template>
+
+                                    <!-- 非表格化：維持原本直式列表 / 橫式欄位 -->
                                     <template v-else>
-                                        <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="category-block">
-                                            <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
-                                                {{ block.title }}
+                                        <div v-if="teacherDisplayMode === 'horizontal' && roomCategories && roomCategories.length > 0"
+                                             class="teacher-category-grid"
+                                             :style="{ '--cat-cols': Math.max(1, getGroupCategoriesAndLines(getDisplayBoardId(i)).length) }">
+                                            <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="teacher-category-column">
+                                                <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">{{ block.title }}</div>
+                                                <ul v-if="block.lines.length > 0">
+                                                    <li v-for="(line, k) in block.lines" :key="k">
+                                                        <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                        <span>{{ line.text }}</span>
+                                                    </li>
+                                                </ul>
+                                                <p v-else class="empty-text" style="margin-top:8px;">(尚無內容)</p>
                                             </div>
-                                            <ul v-if="block.lines.length > 0">
-                                                <li v-for="(line, k) in block.lines" :key="k">
-                                                    <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
-                                                    <span>{{ line.text }}</span>
-                                                </li>
-                                            </ul>
-                                            <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
                                         </div>
+                                        <template v-else>
+                                            <div v-for="(block, bIndex) in getGroupCategoriesAndLines(getDisplayBoardId(i))" :key="bIndex" class="category-block">
+                                                <div v-if="block.title" class="cat-title" :style="block.isOrphaned ? 'color:#ef6c00; border-color:#ef6c00;' : ''">
+                                                    {{ block.title }}
+                                                </div>
+                                                <ul v-if="block.lines.length > 0">
+                                                    <li v-for="(line, k) in block.lines" :key="k">
+                                                        <span v-if="enableRotation && line.authorGroup" class="author-tag-teacher">第{{line.authorGroup}}組</span>
+                                                        <span>{{ line.text }}</span>
+                                                    </li>
+                                                </ul>
+                                                <p v-else class="empty-text" style="padding-left:20px; margin-top:0;">(尚無內容)</p>
+                                            </div>
+                                        </template>
                                     </template>
                                 </template>
                                 <p v-else class="empty-text">尚無內容...</p>
@@ -744,9 +1179,13 @@
 
                         <div v-if="roomCategories && roomCategories.length > 0" class="teacher-controls" style="margin-bottom: 10px;">
                             <div class="display-mode-switch" style="background:white; border:1px solid #e2e8f0; padding:8px 10px; border-radius:8px;">
-                                <span class="mode-label">講師分點呈現：</span>
-                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">☰ 直式列表</button>
-                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">▦ 橫式欄位</button>
+                                <span class="mode-label">{{ tableModeEnabled ? '講師表格方向：' : '講師分點呈現：' }}</span>
+                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'vertical' }" @click="setTeacherDisplayMode('vertical')">
+                                    ↕ {{ tableModeEnabled ? '直式（轉置）' : '直式列表' }}
+                                </button>
+                                <button class="mode-btn" :class="{ active: teacherDisplayMode === 'horizontal' }" @click="setTeacherDisplayMode('horizontal')">
+                                    ↔ {{ tableModeEnabled ? '橫式（一般表格）' : '橫式欄位' }}
+                                </button>
                             </div>
                         </div>
 
@@ -835,21 +1274,48 @@
                             <p style="font-size:0.85rem; color:#888; margin: 5px 0 0 26px;">開啟後，學員初始只會看見第一個分點。講師需在總覽面板手動點擊按鈕，依序開放後續的分點。</p>
 
                             <div style="margin-top:15px; padding-top:15px; border-top:1px dashed #ccc;">
-                                <div style="font-weight:bold; color:#334155; margin-bottom:8px;">講師預設分點呈現方式：</div>
-                                <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; margin-bottom:8px; color:#475569;">
-                                    <input type="radio" v-model="tempTeacherDisplayMode" value="vertical" style="margin-top:3px;">
-                                    <span><strong>☰ 直式列表</strong>：分點由上往下排列，例如「流程 → 目的 → 規則 → 執行細節」。</span>
+                                <label style="cursor:pointer; display:flex; align-items:flex-start; gap:8px; font-weight:bold; color:#7c3aed;">
+                                    <input type="checkbox" v-model="tempTableModeEnabled" style="width:18px; height:18px; margin-top:2px;">
+                                    <span>開啟「表格化對應」功能</span>
                                 </label>
-                                <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; color:#475569;">
-                                    <input type="radio" v-model="tempTeacherDisplayMode" value="horizontal" style="margin-top:3px;">
-                                    <span><strong>▦ 橫式欄位</strong>：分點橫向排成欄，例如「流程｜目的｜規則｜執行細節」，各欄的學員討論向下排列。</span>
-                                </label>
-                                <p style="font-size:0.85rem; color:#888; margin:7px 0 0 26px;">只影響講師總覽、單組放大與全螢幕投影；學員填寫畫面仍維持原本像海報一樣由上往下書寫。</p>
+                                <p style="font-size:0.86rem; color:#6b7280; margin:6px 0 12px 26px; line-height:1.55;">
+                                    開啟後，<strong>第一個分點會成為表格的主項目</strong>。例如第一分點是「流程」，學員輸入「兩兩對練、上台演練」兩列後，
+                                    「目的／規則／執行細節」就會各自出現兩格並一一對應。欄數由分點數決定、列數由第一分點的項目數決定。
+                                </p>
+
+                                <div style="font-weight:bold; color:#334155; margin-bottom:8px;">
+                                    {{ tempTableModeEnabled ? '講師預設表格方向：' : '講師預設分點呈現方式：' }}
+                                </div>
+
+                                <template v-if="tempTableModeEnabled">
+                                    <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; margin-bottom:8px; color:#475569;">
+                                        <input type="radio" v-model="tempTeacherDisplayMode" value="horizontal" style="margin-top:3px;">
+                                        <span><strong>↔ 橫式（一般表格）</strong>：分點是欄，例如「流程｜目的｜規則｜執行細節」；每一個流程向下形成一列。</span>
+                                    </label>
+                                    <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; color:#475569;">
+                                        <input type="radio" v-model="tempTeacherDisplayMode" value="vertical" style="margin-top:3px;">
+                                        <span><strong>↕ 直式（轉置表格）</strong>：把整張表格轉置，分點改成一列一列，第一分點的各項目改成橫向欄位。</span>
+                                    </label>
+                                </template>
+
+                                <template v-else>
+                                    <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; margin-bottom:8px; color:#475569;">
+                                        <input type="radio" v-model="tempTeacherDisplayMode" value="vertical" style="margin-top:3px;">
+                                        <span><strong>☰ 直式列表</strong>：分點由上往下排列，例如「流程 → 目的 → 規則 → 執行細節」。</span>
+                                    </label>
+                                    <label style="display:flex; align-items:flex-start; gap:7px; cursor:pointer; color:#475569;">
+                                        <input type="radio" v-model="tempTeacherDisplayMode" value="horizontal" style="margin-top:3px;">
+                                        <span><strong>▦ 橫式欄位</strong>：分點橫向排成欄，各欄的學員討論向下排列。</span>
+                                    </label>
+                                </template>
+                                <p style="font-size:0.85rem; color:#888; margin:7px 0 0 26px;">
+                                    表格方向可在講師總覽、單組全畫面檢視與投影畫面中即時切換。
+                                </p>
                             </div>
                         </div>
 
                         <div v-for="(cat, index) in tempCategories" :key="cat.id" class="modal-input-group">
-                            <label>分點 {{ index + 1 }}</label>
+                            <label>分點 {{ index + 1 }}<span v-if="tempTableModeEnabled && index === 0" style="display:block; color:#7c3aed; font-size:.72rem; margin-top:2px;">表格主項目</span></label>
                             <input type="text" v-model="cat.name" placeholder="例如：活動前 / 財務面-成本...">
                             <button class="icon-btn btn-del" @click="removeTempCategory(index)" title="移除此分點">🗑️</button>
                         </div>
@@ -950,10 +1416,30 @@
                     columnsPerRow: 3,
                     tempColumnsPerRow: 3,
 
-                    // 講師分點呈現方式：vertical=直式列表；horizontal=橫式欄位
+                    // 講師分點呈現方式：非表格時 vertical=直式列表 / horizontal=橫式欄位；
+                    // 表格化時 vertical=轉置表格 / horizontal=一般表格
                     teacherDisplayMode: 'vertical',
                     tempTeacherDisplayMode: 'vertical',
+                    tableModeEnabled: false,
+                    tempTableModeEnabled: false,
+                    tableShapeSyncing: false,
                     focusedGroup: null,
+
+                    // 單組全螢幕海報的縮放 / 平移狀態
+                    focusScale: 1,
+                    focusPanX: 0,
+                    focusPanY: 0,
+                    focusPanning: false,
+                    focusPanStartX: 0,
+                    focusPanStartY: 0,
+                    focusPanOriginX: 0,
+                    focusPanOriginY: 0,
+                    focusTouchMode: null,
+                    focusPinchStartDistance: 0,
+                    focusPinchStartScale: 1,
+                    focusPinchContentX: 0,
+                    focusPinchContentY: 0,
+                    focusBodyOverflowBefore: '',
 
                     showProjection: false,
                     showProjectionHeader: false, 
@@ -1001,6 +1487,11 @@
                         top: this.floatingBtnY + 'px',
                         left: this.floatingBtnX + 'px',
                         right: 'auto'
+                    };
+                },
+                focusPosterStyle() {
+                    return {
+                        transform: `translate(${this.focusPanX}px, ${this.focusPanY}px) scale(${this.focusScale})`
                     };
                 }
             },
@@ -1062,7 +1553,8 @@
                         this.rotationMode = settings.rotationMode || 'teacher';
                         this.columnsPerRow = settings.columnsPerRow || 3;
                         this.teacherDisplayMode = settings.teacherDisplayMode || 'vertical';
-                        if (this.focusedGroup && this.focusedGroup > this.groupCount) this.focusedGroup = null;
+                        this.tableModeEnabled = settings.tableModeEnabled === true;
+                        if (this.focusedGroup && this.focusedGroup > this.groupCount) this.closeGroupFocus();
                         
                         this.sequentialDisplayEnabled = settings.sequentialDisplayEnabled === true;
                         this.currentVisibleCategoryCount = settings.currentVisibleCategoryCount || 1;
@@ -1181,7 +1673,7 @@
                                     let currentSize = 1.1;
                                     let safetyCounter = 0; 
                                     
-                                    while (inner.scrollHeight > wrapper.clientHeight && currentSize > 0.4 && safetyCounter < 100) {
+                                    while ((inner.scrollHeight > wrapper.clientHeight || inner.scrollWidth > wrapper.clientWidth) && currentSize > 0.4 && safetyCounter < 100) {
                                         currentSize -= 0.05;
                                         inner.style.fontSize = currentSize + 'rem';
                                         void inner.offsetHeight; 
@@ -1218,7 +1710,7 @@
                         newRoomRef.set({ name: newName.trim(), createdAt: Date.now() });
                         
                         db.ref(`discussion_rooms/${room.id}/settings`).once('value', (snap) => {
-                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, enableRotation: false, columnsPerRow: 3, teacherDisplayMode: 'vertical' };
+                            const oldSettings = snap.val() || { groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, enableRotation: false, columnsPerRow: 3, teacherDisplayMode: 'vertical', tableModeEnabled: false };
                             oldSettings.currentRound = 0; 
                             db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set(oldSettings)
                                 .then(() => alert('✅ 討論區與其設定複製成功！(舊討論內容未複製)'))
@@ -1231,7 +1723,7 @@
                     if(!this.newRoomName.trim()) { alert('請輸入討論區名稱'); return; }
                     const newRoomRef = db.ref('discussion_roomsList').push();
                     newRoomRef.set({ name: this.newRoomName.trim(), createdAt: Date.now() });
-                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false, rotationMode: 'teacher', columnsPerRow: 3, teacherDisplayMode: 'vertical', sequentialDisplayEnabled: false, currentVisibleCategoryCount: 1 });
+                    db.ref(`discussion_rooms/${newRoomRef.key}/settings`).set({ groupCount: 6, passwords: {}, categories: [], groupTopics: {}, allowUncategorized: true, currentRound: 0, enableRotation: false, rotationMode: 'teacher', columnsPerRow: 3, teacherDisplayMode: 'vertical', tableModeEnabled: false, sequentialDisplayEnabled: false, currentVisibleCategoryCount: 1 });
                     this.newRoomName = '';
                     alert('✅ 討論區建立成功！');
                 },
@@ -1379,9 +1871,17 @@
                         this.orphanedData = newOrphanedData;
                         this.isLoading = false;
 
+                        if (this.tableModeEnabled && this.roomCategories && this.roomCategories.length > 1) {
+                            this.ensureTableShape(newGroupData);
+                        }
+
                         if (Object.keys(val).length === 0) {
                             if (this.roomCategories && this.roomCategories.length > 0) {
-                                this.roomCategories.forEach(cat => this.addNewLine(cat.id));
+                                if (this.tableModeEnabled && this.roomCategories.length > 1) {
+                                    this.addTableRow();
+                                } else {
+                                    this.roomCategories.forEach(cat => this.addNewLine(cat.id));
+                                }
                             } else {
                                 this.addNewLine('default');
                             }
@@ -1404,8 +1904,7 @@
                 
                 addNewLine(catId) {
                     db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${catId}`).push({
-                        text: '',
-                        authorGroup: this.currentGroup
+                        text: ''
                     }).then(() => {
                         this.saveStatus = '已新增';
                     });
@@ -1416,9 +1915,17 @@
                         ? `discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${item.key}` 
                         : `discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${catId}/${item.key}`;
 
+                    let authorGroup = item.authorGroup || null;
+                    if ((item.text || '').trim() === '') {
+                        authorGroup = null;
+                    } else if (!authorGroup || (this.enableRotation && authorGroup !== this.currentGroup)) {
+                        // 他組留下的「空白格」可由目前組別接手；已有文字的他組內容在介面上是唯讀，不會進到這裡
+                        authorGroup = this.currentGroup;
+                    }
+
                     db.ref(refPath).set({
                         text: item.text,
-                        authorGroup: item.authorGroup || this.currentGroup
+                        authorGroup: authorGroup
                     }).then(() => { this.saveStatus = '已同步'; })
                       .catch(() => { this.saveStatus = '同步失敗'; });
                 },
@@ -1461,14 +1968,243 @@
                     }
                 },
 
-                // 講師總覽單組放大 / 返回總覽
+                // 講師總覽單組放大：改成真正全螢幕海報，可縮放、平移
                 openGroupFocus(groupNum) {
                     this.focusedGroup = groupNum;
-                    this.$nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+                    this.focusBodyOverflowBefore = document.body.style.overflow || '';
+                    document.body.style.overflow = 'hidden';
+                    this.focusScale = 1;
+                    this.focusPanX = 0;
+                    this.focusPanY = 0;
+                    this.$nextTick(() => this.fitFocusView());
                 },
                 closeGroupFocus() {
+                    this.stopFocusPan();
                     this.focusedGroup = null;
-                    this.$nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+                    document.body.style.overflow = this.focusBodyOverflowBefore || '';
+                    this.focusTouchMode = null;
+                },
+                clampFocusScale(scale) {
+                    return Math.max(0.25, Math.min(4, scale));
+                },
+                fitFocusView() {
+                    if (!this.focusedGroup) return;
+                    this.$nextTick(() => {
+                        setTimeout(() => {
+                            const stage = this.$refs.focusStage;
+                            const poster = this.$refs.focusPoster;
+                            if (!stage || !poster) return;
+                            const sw = stage.clientWidth;
+                            const sh = stage.clientHeight;
+                            const pw = poster.offsetWidth;
+                            const ph = poster.offsetHeight;
+                            if (!sw || !sh || !pw || !ph) return;
+
+                            const scale = this.clampFocusScale(Math.min(1, (sw - 70) / pw, (sh - 70) / ph));
+                            this.focusScale = scale;
+                            this.focusPanX = (sw - pw * scale) / 2;
+                            this.focusPanY = (sh - ph * scale) / 2;
+                        }, 40);
+                    });
+                },
+                onFocusWheel(e) {
+                    if (!this.focusedGroup) return;
+                    const stage = this.$refs.focusStage;
+                    if (!stage) return;
+
+                    const rect = stage.getBoundingClientRect();
+                    const localX = e.clientX - rect.left;
+                    const localY = e.clientY - rect.top;
+                    const oldScale = this.focusScale;
+                    const factor = e.deltaY < 0 ? 1.12 : 0.89;
+                    const newScale = this.clampFocusScale(oldScale * factor);
+                    if (newScale === oldScale) return;
+
+                    const contentX = (localX - this.focusPanX) / oldScale;
+                    const contentY = (localY - this.focusPanY) / oldScale;
+                    this.focusScale = newScale;
+                    this.focusPanX = localX - contentX * newScale;
+                    this.focusPanY = localY - contentY * newScale;
+                },
+                startFocusPan(e) {
+                    if (e.button !== undefined && e.button !== 0) return;
+                    this.focusPanning = true;
+                    this.focusPanStartX = e.clientX;
+                    this.focusPanStartY = e.clientY;
+                    this.focusPanOriginX = this.focusPanX;
+                    this.focusPanOriginY = this.focusPanY;
+                    document.addEventListener('mousemove', this.moveFocusPan);
+                    document.addEventListener('mouseup', this.stopFocusPan);
+                },
+                moveFocusPan(e) {
+                    if (!this.focusPanning) return;
+                    this.focusPanX = this.focusPanOriginX + (e.clientX - this.focusPanStartX);
+                    this.focusPanY = this.focusPanOriginY + (e.clientY - this.focusPanStartY);
+                },
+                stopFocusPan() {
+                    this.focusPanning = false;
+                    document.removeEventListener('mousemove', this.moveFocusPan);
+                    document.removeEventListener('mouseup', this.stopFocusPan);
+                },
+                focusTouchDistance(t1, t2) {
+                    const dx = t2.clientX - t1.clientX;
+                    const dy = t2.clientY - t1.clientY;
+                    return Math.sqrt(dx * dx + dy * dy);
+                },
+                startFocusTouch(e) {
+                    const stage = this.$refs.focusStage;
+                    if (!stage) return;
+                    if (e.touches.length >= 2) {
+                        const rect = stage.getBoundingClientRect();
+                        const t1 = e.touches[0];
+                        const t2 = e.touches[1];
+                        const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+                        const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+                        this.focusTouchMode = 'pinch';
+                        this.focusPinchStartDistance = this.focusTouchDistance(t1, t2) || 1;
+                        this.focusPinchStartScale = this.focusScale;
+                        this.focusPinchContentX = (midX - this.focusPanX) / this.focusScale;
+                        this.focusPinchContentY = (midY - this.focusPanY) / this.focusScale;
+                    } else if (e.touches.length === 1) {
+                        this.focusTouchMode = 'pan';
+                        this.focusPanStartX = e.touches[0].clientX;
+                        this.focusPanStartY = e.touches[0].clientY;
+                        this.focusPanOriginX = this.focusPanX;
+                        this.focusPanOriginY = this.focusPanY;
+                        this.focusPanning = true;
+                    }
+                },
+                moveFocusTouch(e) {
+                    const stage = this.$refs.focusStage;
+                    if (!stage) return;
+                    if (e.touches.length >= 2 && this.focusTouchMode === 'pinch') {
+                        const rect = stage.getBoundingClientRect();
+                        const t1 = e.touches[0];
+                        const t2 = e.touches[1];
+                        const distance = this.focusTouchDistance(t1, t2) || 1;
+                        const newScale = this.clampFocusScale(this.focusPinchStartScale * (distance / this.focusPinchStartDistance));
+                        const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
+                        const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+                        this.focusScale = newScale;
+                        this.focusPanX = midX - this.focusPinchContentX * newScale;
+                        this.focusPanY = midY - this.focusPinchContentY * newScale;
+                    } else if (e.touches.length === 1 && this.focusTouchMode === 'pan') {
+                        this.focusPanX = this.focusPanOriginX + (e.touches[0].clientX - this.focusPanStartX);
+                        this.focusPanY = this.focusPanOriginY + (e.touches[0].clientY - this.focusPanStartY);
+                    }
+                },
+                endFocusTouch(e) {
+                    this.focusPanning = false;
+                    if (e.touches && e.touches.length === 1) {
+                        this.focusTouchMode = 'pan';
+                        this.focusPanStartX = e.touches[0].clientX;
+                        this.focusPanStartY = e.touches[0].clientY;
+                        this.focusPanOriginX = this.focusPanX;
+                        this.focusPanOriginY = this.focusPanY;
+                        this.focusPanning = true;
+                    } else {
+                        this.focusTouchMode = null;
+                    }
+                },
+
+                // 表格化學生端：取得第一分點同列文字
+                getStudentPrimaryText(rowIndex) {
+                    if (!this.roomCategories || this.roomCategories.length === 0) return '';
+                    const primaryId = this.roomCategories[0].id;
+                    const item = (this.groupData[primaryId] || [])[rowIndex];
+                    return item ? (item.text || '') : '';
+                },
+
+                // 將各分點補成相同列數（不刪除舊資料，只補空格），以確保表格可以精準對應
+                ensureTableShape(groupDataMap) {
+                    if (!this.tableModeEnabled || !this.currentGroup || !this.virtualGroup ||
+                        !this.roomCategories || this.roomCategories.length < 2 || this.tableShapeSyncing) return;
+
+                    const counts = this.roomCategories.map(cat => ((groupDataMap && groupDataMap[cat.id]) || []).length);
+                    const maxCount = Math.max(0, ...counts);
+                    if (maxCount <= 0) return;
+
+                    const updates = {};
+                    this.roomCategories.forEach((cat, catIndex) => {
+                        const missing = maxCount - counts[catIndex];
+                        for (let n = 0; n < missing; n++) {
+                            const key = db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${cat.id}`).push().key;
+                            updates[`${cat.id}/${key}`] = { text: '' };
+                        }
+                    });
+
+                    if (Object.keys(updates).length > 0) {
+                        this.tableShapeSyncing = true;
+                        db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}`).update(updates)
+                            .finally(() => { this.tableShapeSyncing = false; });
+                    }
+                },
+                addTableRow() {
+                    if (!this.currentGroup || !this.virtualGroup || !this.roomCategories || this.roomCategories.length === 0) return;
+                    const updates = {};
+                    this.roomCategories.forEach(cat => {
+                        const key = db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}/${cat.id}`).push().key;
+                        updates[`${cat.id}/${key}`] = { text: '' };
+                    });
+                    db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}`).update(updates)
+                        .then(() => { this.saveStatus = '已新增一列表格項目'; });
+                },
+                removeTableRow(rowIndex) {
+                    if (!this.currentGroup || !this.virtualGroup || rowIndex < 0) return;
+                    const updates = {};
+                    this.roomCategories.forEach(cat => {
+                        const item = (this.groupData[cat.id] || [])[rowIndex];
+                        if (item && item.key) updates[`${cat.id}/${item.key}`] = null;
+                    });
+                    if (Object.keys(updates).length > 0) {
+                        db.ref(`discussion_rooms/${this.roomId}/groups/group_${this.virtualGroup}`).update(updates);
+                    }
+                },
+
+                // 講師表格資料工具：依各分點內的輸入順序對齊同一列
+                getTableCategoryEntries(boardIndex, catId) {
+                    const data = this.allGroupsData['group_' + boardIndex] || {};
+                    const raw = data[catId];
+                    if (!raw || typeof raw !== 'object') return [];
+                    return Object.keys(raw).map(key => {
+                        const node = raw[key];
+                        if (node && typeof node === 'object') {
+                            return { key, text: node.text || '', authorGroup: node.authorGroup || null };
+                        }
+                        return { key, text: node || '', authorGroup: null };
+                    });
+                },
+                getTableRowCount(boardIndex) {
+                    if (!this.visibleRoomCategories || this.visibleRoomCategories.length === 0) return 0;
+                    return Math.max(0, ...this.visibleRoomCategories.map(cat => this.getTableCategoryEntries(boardIndex, cat.id).length));
+                },
+                getTableCell(boardIndex, catId, rowIndex) {
+                    const entries = this.getTableCategoryEntries(boardIndex, catId);
+                    return entries[rowIndex] || { key: null, text: '', authorGroup: null };
+                },
+                getTableOrphanedLines(boardIndex) {
+                    const data = this.allGroupsData['group_' + boardIndex] || {};
+                    const lines = [];
+
+                    const appendNode = (node) => {
+                        if (node && typeof node === 'object' && Object.prototype.hasOwnProperty.call(node, 'text')) {
+                            const text = node.text || '';
+                            if (text.trim() !== '') lines.push({ text, authorGroup: node.authorGroup || null });
+                        } else if (typeof node === 'string' && node.trim() !== '') {
+                            lines.push({ text: node, authorGroup: null });
+                        }
+                    };
+
+                    if (data.default && typeof data.default === 'object') {
+                        Object.values(data.default).forEach(appendNode);
+                    }
+                    Object.keys(data).forEach(key => {
+                        if (key === 'default' || this.roomCategories.find(c => c.id === key)) return;
+                        appendNode(data[key]);
+                    });
+                    return lines;
                 },
 
                 // 直式 / 橫式可在講師畫面與投影控制列即時切換，並同步保存為本討論區預設
@@ -1479,6 +2215,7 @@
                         db.ref(`discussion_rooms/${this.roomId}/settings/teacherDisplayMode`).set(mode);
                     }
                     if (this.showProjection) this.adjustProjectionScale();
+                    if (this.focusedGroup) this.fitFocusView();
                 },
 
                 listenToAllData() {
@@ -1581,6 +2318,7 @@
                     this.tempRotationMode = this.rotationMode; 
                     this.tempColumnsPerRow = this.columnsPerRow;
                     this.tempTeacherDisplayMode = this.teacherDisplayMode;
+                    this.tempTableModeEnabled = this.tableModeEnabled;
                     
                     this.showTeacherModal = true;
                 },
@@ -1595,6 +2333,11 @@
                 },
                 saveSettings() {
                     const validCategories = this.tempCategories.filter(c => c.name.trim() !== '');
+
+                    if (this.tempTableModeEnabled && validCategories.length < 2) {
+                        alert('📋 表格化對應至少需要 2 個討論分點。\n請先設定第一個主項目與至少一個對應分點。');
+                        return;
+                    }
                     
                     let newRound = this.currentRound;
                     if (this.tempGroupCount !== this.groupCount || !this.tempEnableRotation) {
@@ -1618,6 +2361,7 @@
                         rotationMode: this.tempRotationMode,
                         columnsPerRow: this.tempColumnsPerRow,
                         teacherDisplayMode: this.tempTeacherDisplayMode,
+                        tableModeEnabled: this.tempTableModeEnabled,
                         currentRound: newRound
                     }).then(() => {
                         this.showTeacherModal = false;
